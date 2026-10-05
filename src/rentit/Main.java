@@ -85,6 +85,7 @@ public class Main {
         CreditWallet wallet = new CreditWallet();
         
         BookingManager bookingManager = new BookingManager();
+        
 
         System.out.println("Starting credits: ₹" + wallet.getCredits());
 
@@ -100,6 +101,8 @@ public class Main {
         	);
         	
         	bookingManager.addBooking(booking);
+        	
+        	bookingManager.saveBookings();
 
             System.out.println(
                     "Credits after booking: ₹" + wallet.getCredits()

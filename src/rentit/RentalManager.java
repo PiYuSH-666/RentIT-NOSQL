@@ -34,5 +34,9 @@ public class RentalManager {
 
         return null;
     }
+    
+    public ArrayList<Vehicle> getVehicles() {
+        return vehicles;
+    }
 
 }

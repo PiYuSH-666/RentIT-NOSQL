@@ -103,6 +103,13 @@ public class Main {
         	bookingManager.addBooking(booking);
         	
         	bookingManager.saveBookings();
+        	
+        	BookingManager loadedBookingManager = new BookingManager();
+
+        	loadedBookingManager.loadBookings(manager);
+
+        	System.out.println("\nLoaded Bookings From File:");
+        	loadedBookingManager.displayBookings();
 
             System.out.println(
                     "Credits after booking: ₹" + wallet.getCredits()

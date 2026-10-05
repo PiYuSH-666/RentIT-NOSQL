@@ -52,6 +52,19 @@ public class Booking {
         // Deduct credits after successful booking
         wallet.deductCredits(totalPrice);
     }
+    
+    // Constructor used when restoring a saved booking from a file
+    public Booking(String customerName, Vehicle vehicle, int days,
+                   String pickupLocation, String returnLocation,
+                   double totalPrice) {
+
+        this.customerName = customerName;
+        this.vehicle = vehicle;
+        this.days = days;
+        this.pickupLocation = pickupLocation;
+        this.returnLocation = returnLocation;
+        this.totalPrice = totalPrice;
+    }
 
     public String getCustomerName() {
         return customerName;

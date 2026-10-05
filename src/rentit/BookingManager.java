@@ -1,8 +1,11 @@
 package rentit;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+
 
 public class BookingManager {
 
@@ -59,6 +62,62 @@ public class BookingManager {
 
             System.out.println(
                     "Error saving bookings: " + e.getMessage()
+            );
+        }
+    }
+    
+    public void loadBookings(RentalManager rentalManager) {
+
+        try (BufferedReader reader =
+                     new BufferedReader(new FileReader("bookings.txt"))) {
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+
+                String[] data = line.split("\\|");
+
+                if (data.length != 7) {
+                    continue;
+                }
+
+                String customerName = data[0];
+                String vehicleId = data[1];
+                int days = Integer.parseInt(data[3]);
+                String pickupLocation = data[4];
+                String returnLocation = data[5];
+                double totalPrice = Double.parseDouble(data[6]);
+
+                Vehicle vehicle =
+                        rentalManager.findVehicleById(vehicleId);
+
+                if (vehicle != null) {
+
+                    Booking booking = new Booking(
+                            customerName,
+                            vehicle,
+                            days,
+                            pickupLocation,
+                            returnLocation,
+                            totalPrice
+                    );
+
+                    bookings.add(booking);
+                }
+            }
+
+            System.out.println("Bookings loaded successfully.");
+
+        } catch (IOException e) {
+
+            System.out.println(
+                    "No saved bookings found."
+            );
+
+        } catch (NumberFormatException e) {
+
+            System.out.println(
+                    "Invalid booking data in file."
             );
         }
     }

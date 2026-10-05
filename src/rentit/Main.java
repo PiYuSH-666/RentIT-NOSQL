@@ -53,7 +53,9 @@ public class Main {
             System.out.println("Car available after cancellation: "
                     + car.getAvailableCount());
 
-        } catch (VehicleNotAvailableException | InsufficientCreditsException e) {
+        }  catch (VehicleNotAvailableException
+                | InsufficientCreditsException
+                | InvalidBookingException e) {
             System.out.println(e.getMessage());
         }
 

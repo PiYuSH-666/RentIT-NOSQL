@@ -8,13 +8,20 @@ public class Booking {
     private double totalPrice;
 
     public Booking(String customerName, Vehicle vehicle, int days,
-                   CreditWallet wallet)
-            throws VehicleNotAvailableException,
-                   InsufficientCreditsException {
+            CreditWallet wallet)
+     throws VehicleNotAvailableException,
+            InsufficientCreditsException,
+            InvalidBookingException {
 
-        this.customerName = customerName;
-        this.vehicle = vehicle;
-        this.days = days;
+ if (days <= 0) {
+     throw new InvalidBookingException(
+             "Booking days must be greater than 0."
+     );
+ }
+
+ this.customerName = customerName;
+ this.vehicle = vehicle;
+ this.days = days;
 
         this.totalPrice = vehicle.getPricePerDay() * days;
 

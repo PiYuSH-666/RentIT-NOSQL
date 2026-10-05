@@ -83,6 +83,8 @@ public class Main {
 
         // Create credit wallet
         CreditWallet wallet = new CreditWallet();
+        
+        BookingManager bookingManager = new BookingManager();
 
         System.out.println("Starting credits: ₹" + wallet.getCredits());
 
@@ -96,6 +98,8 @@ public class Main {
         	        "Jaipur Airport",
         	        wallet
         	);
+        	
+        	bookingManager.addBooking(booking);
 
             System.out.println(
                     "Credits after booking: ₹" + wallet.getCredits()
@@ -129,6 +133,9 @@ public class Main {
             System.out.println(
                     "Return location: " + booking.getReturnLocation()
             );
+            
+            System.out.println("\nMy Bookings:");
+            bookingManager.displayBookings();
 
             // Cancel booking
             booking.cancelBooking();

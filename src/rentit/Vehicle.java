@@ -1,19 +1,32 @@
 package rentit;
 
-public abstract class Vehicle implements Rentable  {
+public abstract class Vehicle implements Rentable {
 
     private String vehicleId;
     private String model;
     private double pricePerDay;
     private int availableCount;
 
-    public Vehicle(String vehicleId, String model, double pricePerDay, int availableCount) {
+    private String fuelType;
+    private String transmission;
+    private int seats;
+    private String bodyType;
+
+    public Vehicle(String vehicleId, String model, double pricePerDay,
+                   int availableCount, String fuelType,
+                   String transmission, int seats, String bodyType) {
+
         this.vehicleId = vehicleId;
         this.model = model;
         this.pricePerDay = pricePerDay;
         this.availableCount = availableCount;
+
+        this.fuelType = fuelType;
+        this.transmission = transmission;
+        this.seats = seats;
+        this.bodyType = bodyType;
     }
-    
+
     public String getVehicleId() {
         return vehicleId;
     }
@@ -29,22 +42,41 @@ public abstract class Vehicle implements Rentable  {
     public int getAvailableCount() {
         return availableCount;
     }
-    
+
+    public String getFuelType() {
+        return fuelType;
+    }
+
+    public String getTransmission() {
+        return transmission;
+    }
+
+    public int getSeats() {
+        return seats;
+    }
+
+    public String getBodyType() {
+        return bodyType;
+    }
+
     public abstract String getVehicleType();
-    
+
     public void bookVehicle() throws VehicleNotAvailableException {
         if (availableCount > 0) {
             availableCount--;
         } else {
-            throw new VehicleNotAvailableException("Vehicle is not available for booking.");
+            throw new VehicleNotAvailableException(
+                    "Vehicle is not available for booking."
+            );
         }
     }
+
     public void cancelBooking() {
         availableCount++;
     }
+
     @Override
     public void rent() {
         System.out.println("Vehicle rented: " + model);
     }
-
 }

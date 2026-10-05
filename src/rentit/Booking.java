@@ -7,25 +7,39 @@ public class Booking {
     private int days;
     private double totalPrice;
 
+    private String pickupLocation;
+    private String returnLocation;
+
     public Booking(String customerName, Vehicle vehicle, int days,
-            CreditWallet wallet)
-     throws VehicleNotAvailableException,
-            InsufficientCreditsException,
-            InvalidBookingException {
+                   String pickupLocation, String returnLocation,
+                   CreditWallet wallet)
+            throws VehicleNotAvailableException,
+                   InsufficientCreditsException,
+                   InvalidBookingException {
 
- if (days <= 0) {
-     throw new InvalidBookingException(
-             "Booking days must be greater than 0."
-     );
- }
+        if (days <= 0) {
+            throw new InvalidBookingException(
+                    "Booking days must be greater than 0."
+            );
+        }
 
- this.customerName = customerName;
- this.vehicle = vehicle;
- this.days = days;
+        if (pickupLocation == null || pickupLocation.trim().isEmpty()
+                || returnLocation == null || returnLocation.trim().isEmpty()) {
+
+            throw new InvalidBookingException(
+                    "Pickup and return locations are required."
+            );
+        }
+
+        this.customerName = customerName;
+        this.vehicle = vehicle;
+        this.days = days;
+        this.pickupLocation = pickupLocation;
+        this.returnLocation = returnLocation;
 
         this.totalPrice = vehicle.getPricePerDay() * days;
 
-     // Check credits before changing vehicle availability
+        // Check credits before changing vehicle availability
         if (wallet.getCredits() < totalPrice) {
             throw new InsufficientCreditsException(
                     "Insufficient credits to complete the booking."
@@ -53,6 +67,14 @@ public class Booking {
 
     public double getTotalPrice() {
         return totalPrice;
+    }
+
+    public String getPickupLocation() {
+        return pickupLocation;
+    }
+
+    public String getReturnLocation() {
+        return returnLocation;
     }
 
     public void cancelBooking() {

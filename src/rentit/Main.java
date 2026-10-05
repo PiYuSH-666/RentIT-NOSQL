@@ -88,7 +88,14 @@ public class Main {
 
         // Create a booking
         try {
-            Booking booking = new Booking("Rahul", swift, 2, wallet);
+        	Booking booking = new Booking(
+        	        "Rahul",
+        	        swift,
+        	        2,
+        	        "Jaipur City Center",
+        	        "Jaipur Airport",
+        	        wallet
+        	);
 
             System.out.println(
                     "Credits after booking: ₹" + wallet.getCredits()
@@ -113,6 +120,14 @@ public class Main {
 
             System.out.println(
                     "Total price: ₹" + booking.getTotalPrice()
+            );
+            
+            System.out.println(
+                    "Pickup location: " + booking.getPickupLocation()
+            );
+
+            System.out.println(
+                    "Return location: " + booking.getReturnLocation()
             );
 
             // Cancel booking

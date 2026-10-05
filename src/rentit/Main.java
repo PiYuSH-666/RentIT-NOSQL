@@ -29,10 +29,16 @@ public class Main {
         } else {
             System.out.println("Vehicle not found.");
         }
+        
+        CreditWallet wallet = new CreditWallet();
+
+        System.out.println("Starting credits: ₹" + wallet.getCredits());
 
         // Create a booking
         try {
-            Booking booking = new Booking("Rahul", car, 2);
+            Booking booking = new Booking("Rahul", car, 2, wallet);
+            
+            System.out.println("Credits after booking: ₹" + wallet.getCredits());
 
             System.out.println("Car available after booking: "
                     + car.getAvailableCount());
@@ -42,18 +48,19 @@ public class Main {
             System.out.println("Days: " + booking.getDays());
             System.out.println("Total price: ₹" + booking.getTotalPrice());
 
-            // Cancel the booking
             booking.cancelBooking();
 
             System.out.println("Car available after cancellation: "
                     + car.getAvailableCount());
 
-        } catch (VehicleNotAvailableException e) {
+        } catch (VehicleNotAvailableException | InsufficientCreditsException e) {
             System.out.println(e.getMessage());
         }
 
         // Interface polymorphism
         Rentable rentable = car;
         rentable.rent();
+        
+       
     }
 }

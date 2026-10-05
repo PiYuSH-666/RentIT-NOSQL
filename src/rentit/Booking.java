@@ -7,16 +7,29 @@ public class Booking {
     private int days;
     private double totalPrice;
 
-    public Booking(String customerName, Vehicle vehicle, int days)
-            throws VehicleNotAvailableException {
+    public Booking(String customerName, Vehicle vehicle, int days,
+                   CreditWallet wallet)
+            throws VehicleNotAvailableException,
+                   InsufficientCreditsException {
 
         this.customerName = customerName;
         this.vehicle = vehicle;
         this.days = days;
 
+        this.totalPrice = vehicle.getPricePerDay() * days;
+
+     // Check credits before changing vehicle availability
+        if (wallet.getCredits() < totalPrice) {
+            throw new InsufficientCreditsException(
+                    "Insufficient credits to complete the booking."
+            );
+        }
+
+        // Book the vehicle
         vehicle.bookVehicle();
 
-        this.totalPrice = vehicle.getPricePerDay() * days;
+        // Deduct credits after successful booking
+        wallet.deductCredits(totalPrice);
     }
 
     public String getCustomerName() {
@@ -34,6 +47,7 @@ public class Booking {
     public double getTotalPrice() {
         return totalPrice;
     }
+
     public void cancelBooking() {
         vehicle.cancelBooking();
     }

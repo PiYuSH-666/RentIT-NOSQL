@@ -37,6 +37,7 @@ import rentit.Bike;
 import rentit.Car;
 import rentit.RentalManager;
 import rentit.Scooter;
+import rentit.BookingManager;
 
 public class RentITFrame extends JFrame {
 
@@ -55,6 +56,7 @@ public class RentITFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel contentPanel;
     private RentalManager rentalManager;
+    private BookingManager bookingManager;
 
     // =====================================================
     // CONSTRUCTOR
@@ -77,6 +79,12 @@ public class RentITFrame extends JFrame {
         setLocationRelativeTo(null);
         
         rentalManager = createRentalManager();
+        
+        bookingManager = new BookingManager();
+
+        bookingManager.loadBookings(
+                rentalManager
+        );
 
         JPanel mainPanel =
                 new JPanel(new BorderLayout());
@@ -266,6 +274,11 @@ public class RentITFrame extends JFrame {
         contentPanel.add(
                 new VehiclesPanel(rentalManager),
                 "VEHICLES"
+        );
+        
+        contentPanel.add(
+                new BookingsPanel(bookingManager),
+                "BOOKINGS"
         );
 
         mainPanel.add(
@@ -630,6 +643,14 @@ public class RentITFrame extends JFrame {
                     e -> cardLayout.show(
                             contentPanel,
                             "VEHICLES"
+                    )
+            );
+        } else if (text.equals("My Bookings")) {
+
+            button.addActionListener(
+                    e -> cardLayout.show(
+                            contentPanel,
+                            "BOOKINGS"
                     )
             );
         }

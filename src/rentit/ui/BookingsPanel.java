@@ -448,6 +448,7 @@ public class BookingsPanel extends JPanel {
                 bookingManager.removeBooking(
                         booking
                 );
+                bookingManager.saveBookings();
 
                 refreshBookings();
                 

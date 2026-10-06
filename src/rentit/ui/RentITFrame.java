@@ -61,6 +61,7 @@ public class RentITFrame extends JFrame {
     private CreditWallet wallet;
     private BookingsPanel bookingsPanel;
     private VehiclesPanel vehiclesPanel;
+   
 
     // =====================================================
     // CONSTRUCTOR
@@ -87,6 +88,8 @@ public class RentITFrame extends JFrame {
         bookingManager = new BookingManager();
         
         wallet = new CreditWallet();
+        
+        loadSavedBookings();
 
         
 
@@ -1909,6 +1912,10 @@ public class RentITFrame extends JFrame {
         );
 
         return manager;
+    }
+    
+    private void loadSavedBookings() {
+        bookingManager.loadBookings(rentalManager, wallet);
     }
 
     // =====================================================

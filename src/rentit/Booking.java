@@ -59,16 +59,17 @@ public class Booking {
     
     // Constructor used when restoring a saved booking from a file
     public Booking(String customerName, Vehicle vehicle, int days,
-                   String pickupLocation, String returnLocation,
-                   double totalPrice) {
+            String pickupLocation, String returnLocation,
+            double totalPrice, CreditWallet wallet) {
 
-        this.customerName = customerName;
-        this.vehicle = vehicle;
-        this.days = days;
-        this.pickupLocation = pickupLocation;
-        this.returnLocation = returnLocation;
-        this.totalPrice = totalPrice;
-    }
+ this.customerName = customerName;
+ this.vehicle = vehicle;
+ this.days = days;
+ this.pickupLocation = pickupLocation;
+ this.returnLocation = returnLocation;
+ this.totalPrice = totalPrice;
+ this.wallet = wallet;
+}
 
     public String getCustomerName() {
         return customerName;

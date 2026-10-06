@@ -69,7 +69,7 @@ public class BookingManager {
         }
     }
     
-    public void loadBookings(RentalManager rentalManager) {
+    public void loadBookings(RentalManager rentalManager, CreditWallet wallet) {
 
         try (BufferedReader reader =
                      new BufferedReader(new FileReader("bookings.txt"))) {
@@ -96,13 +96,18 @@ public class BookingManager {
 
                 if (vehicle != null) {
 
+                    vehicle.bookVehicle();
+
+                    wallet.deductCredits(totalPrice);
+
                     Booking booking = new Booking(
                             customerName,
                             vehicle,
                             days,
                             pickupLocation,
                             returnLocation,
-                            totalPrice
+                            totalPrice,
+                            wallet
                     );
 
                     bookings.add(booking);
@@ -122,6 +127,18 @@ public class BookingManager {
             System.out.println(
                     "Invalid booking data in file."
             );
+        } catch (VehicleNotAvailableException e) {
+
+            System.out.println(
+                    "Saved vehicle is no longer available."
+            );
+
+        } catch (InsufficientCreditsException e) {
+
+            System.out.println(
+                    "Not enough credits to restore saved bookings."
+            );
         }
+        
     }
 }

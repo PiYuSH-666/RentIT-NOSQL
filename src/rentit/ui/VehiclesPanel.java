@@ -481,6 +481,8 @@ public class VehiclesPanel extends JPanel {
                             booking
                     );
                     
+                    bookingManager.saveBookings();
+                    
                     refreshVehicles();
 
                     JOptionPane.showMessageDialog(

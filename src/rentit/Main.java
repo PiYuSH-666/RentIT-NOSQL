@@ -106,8 +106,8 @@ public class Main {
         	
         	BookingManager loadedBookingManager = new BookingManager();
 
-        	loadedBookingManager.loadBookings(manager);
-
+        	bookingManager.loadBookings(manager, wallet);
+        	
         	System.out.println("\nLoaded Bookings From File:");
         	loadedBookingManager.displayBookings();
 

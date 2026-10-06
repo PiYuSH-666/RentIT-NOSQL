@@ -671,6 +671,8 @@ public class RentITFrame extends JFrame {
             button.addActionListener(
                     e -> {
 
+                        vehiclesPanel.setSelectedCategory("All");
+
                         cardLayout.show(
                                 contentPanel,
                                 "VEHICLES"
@@ -1062,11 +1064,18 @@ public class RentITFrame extends JFrame {
                         @Override
                         public void mouseEntered(
                                 MouseEvent e) {
+                        	
 
                             hovered =
                                     true;
 
                             startAnimation();
+                            
+                            setCursor(
+                                    new Cursor(
+                                            Cursor.HAND_CURSOR
+                                    )
+                            );
                         }
 
                         @Override
@@ -1086,12 +1095,27 @@ public class RentITFrame extends JFrame {
                         }
 
                         @Override
-                        public void mouseClicked(
-                                MouseEvent e) {
+                        public void mouseClicked(MouseEvent e) {
 
-                            System.out.println(
-                                    title
-                                    + " selected"
+                            String category = title;
+
+                            if (category.equalsIgnoreCase("Cars")) {
+                                category = "Car";
+                            } else if (category.equalsIgnoreCase("Bikes")) {
+                                category = "Bike";
+                            } else if (category.equalsIgnoreCase("Scooters")) {
+                                category = "Scooter";
+                            }
+
+                            vehiclesPanel.setSelectedCategory(category);
+
+                            cardLayout.show(
+                                    contentPanel,
+                                    "VEHICLES"
+                            );
+
+                            setActiveNavigation(
+                                    vehiclesNavButton
                             );
                         }
                     }

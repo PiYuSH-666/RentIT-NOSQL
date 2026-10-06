@@ -59,6 +59,16 @@ public class VehiclesPanel extends JPanel {
     private CreditWallet wallet;
     private RentalManager rentalManager;
 
+    // Cache the three scaled vehicle images so each vehicle card
+    // does not read and scale the same image again.
+    private ImageIcon carImageIcon;
+    private ImageIcon bikeImageIcon;
+    private ImageIcon scooterImageIcon;
+
+    // Current vehicle category shown on the page.
+    // "All" shows every vehicle.
+    private String selectedCategory = "All";
+
     // =====================================================
     // CONSTRUCTOR
     // =====================================================
@@ -75,6 +85,13 @@ public class VehiclesPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
 
+        // Load each vehicle image once and reuse it for all cards.
+        carImageIcon = loadVehicleImage("images/car.png");
+        bikeImageIcon = loadVehicleImage("images/bike.png");
+        scooterImageIcon = loadVehicleImage("images/scooter.png");
+
+        // Keep the original navigation behavior: the Vehicles page
+        // is ready before the user clicks the Vehicles tab.
         buildVehiclePage();
     }
 
@@ -190,6 +207,12 @@ public class VehiclesPanel extends JPanel {
                 rentalManager.getVehicles();
 
         for (Vehicle vehicle : vehicles) {
+
+            if (!selectedCategory.equalsIgnoreCase("All")
+                    && !vehicle.getVehicleType()
+                            .equalsIgnoreCase(selectedCategory)) {
+                continue;
+            }
 
             vehicleGrid.add(
                     createVehicleCard(vehicle)
@@ -1734,25 +1757,21 @@ scrollPane.getVerticalScrollBar()
     private ImageIcon loadVehicleImage(
             Vehicle vehicle) {
 
-        String imagePath;
-
         if (vehicle.getVehicleType()
                 .equalsIgnoreCase("Car")) {
-
-            imagePath =
-                    "images/car.png";
-
-        } else if (vehicle.getVehicleType()
-                .equalsIgnoreCase("Bike")) {
-
-            imagePath =
-                    "images/bike.png";
-
-        } else {
-
-            imagePath =
-                    "images/scooter.png";
+            return carImageIcon;
         }
+
+        if (vehicle.getVehicleType()
+                .equalsIgnoreCase("Bike")) {
+            return bikeImageIcon;
+        }
+
+        return scooterImageIcon;
+    }
+
+    private ImageIcon loadVehicleImage(
+            String imagePath) {
 
         try {
 
@@ -1760,6 +1779,10 @@ scrollPane.getVerticalScrollBar()
                     ImageIO.read(
                             new File(imagePath)
                     );
+
+            if (image == null) {
+                return new ImageIcon();
+            }
 
             Image scaledImage =
                     image.getScaledInstance(
@@ -1779,11 +1802,25 @@ scrollPane.getVerticalScrollBar()
     }
 
     // =====================================================
+    // CATEGORY FILTER
+    // =====================================================
+
+    public void setSelectedCategory(String category) {
+
+        if (category == null || category.trim().isEmpty()) {
+            selectedCategory = "All";
+        } else {
+            selectedCategory = category;
+        }
+
+        buildVehiclePage();
+    }
+
+    // =====================================================
     // REFRESH VEHICLES
     // =====================================================
 
     public void refreshVehicles() {
-
         buildVehiclePage();
     }
 }

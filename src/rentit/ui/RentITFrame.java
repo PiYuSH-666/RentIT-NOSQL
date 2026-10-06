@@ -4,6 +4,7 @@ import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.CardLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -32,6 +33,11 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import rentit.Bike;
+import rentit.Car;
+import rentit.RentalManager;
+import rentit.Scooter;
+
 public class RentITFrame extends JFrame {
 
     // =====================================================
@@ -46,6 +52,9 @@ public class RentITFrame extends JFrame {
 
     // Footer is only shown when the window is maximized.
     private JPanel footerPanel;
+    private CardLayout cardLayout;
+    private JPanel contentPanel;
+    private RentalManager rentalManager;
 
     // =====================================================
     // CONSTRUCTOR
@@ -66,6 +75,8 @@ public class RentITFrame extends JFrame {
         );
 
         setLocationRelativeTo(null);
+        
+        rentalManager = createRentalManager();
 
         JPanel mainPanel =
                 new JPanel(new BorderLayout());
@@ -238,8 +249,27 @@ public class RentITFrame extends JFrame {
                 BorderLayout.CENTER
         );
 
-        mainPanel.add(
+        cardLayout = new CardLayout();
+
+        contentPanel =
+                new JPanel(cardLayout);
+
+        contentPanel.setBackground(
+                Color.WHITE
+        );
+
+        contentPanel.add(
                 homeContent,
+                "HOME"
+        );
+
+        contentPanel.add(
+                new VehiclesPanel(rentalManager),
+                "VEHICLES"
+        );
+
+        mainPanel.add(
+                contentPanel,
                 BorderLayout.CENTER
         );
 
@@ -585,6 +615,24 @@ public class RentITFrame extends JFrame {
                         16
                 )
         );
+        if (text.equals("Home")) {
+
+            button.addActionListener(
+                    e -> cardLayout.show(
+                            contentPanel,
+                            "HOME"
+                    )
+            );
+
+        } else if (text.equals("Vehicles")) {
+
+            button.addActionListener(
+                    e -> cardLayout.show(
+                            contentPanel,
+                            "VEHICLES"
+                    )
+            );
+        }
 
         return button;
     }
@@ -1693,6 +1741,135 @@ public class RentITFrame extends JFrame {
         return new javax.swing.ImageIcon(
                 scaled
         );
+    }
+    
+    
+    private RentalManager createRentalManager() {
+
+        RentalManager manager =
+                new RentalManager();
+
+        // Cars
+        manager.addVehicle(
+                new Car(
+                        "CAR001",
+                        "Maruti Swift",
+                        1200,
+                        3,
+                        "Petrol",
+                        "Manual",
+                        5,
+                        "Hatchback"
+                )
+        );
+
+        manager.addVehicle(
+                new Car(
+                        "CAR002",
+                        "Honda City",
+                        1800,
+                        2,
+                        "Petrol",
+                        "Automatic",
+                        5,
+                        "Sedan"
+                )
+        );
+
+        manager.addVehicle(
+                new Car(
+                        "CAR003",
+                        "Hyundai Creta",
+                        2500,
+                        1,
+                        "Diesel",
+                        "Automatic",
+                        5,
+                        "SUV"
+                )
+        );
+
+        // Bikes
+        manager.addVehicle(
+                new Bike(
+                        "BIKE001",
+                        "Yamaha MT-15",
+                        800,
+                        2,
+                        "Petrol",
+                        "Manual",
+                        2,
+                        "Street Bike"
+                )
+        );
+
+        manager.addVehicle(
+                new Bike(
+                        "BIKE002",
+                        "Royal Enfield Classic 350",
+                        1000,
+                        2,
+                        "Petrol",
+                        "Manual",
+                        2,
+                        "Cruiser"
+                )
+        );
+
+        manager.addVehicle(
+                new Bike(
+                        "BIKE003",
+                        "KTM Duke 250",
+                        1200,
+                        1,
+                        "Petrol",
+                        "Manual",
+                        2,
+                        "Naked Bike"
+                )
+        );
+
+        // Scooters
+        manager.addVehicle(
+                new Scooter(
+                        "SCOOTER001",
+                        "Honda Activa 6G",
+                        500,
+                        3,
+                        "Petrol",
+                        "Automatic",
+                        2,
+                        "Scooter"
+                )
+        );
+
+        manager.addVehicle(
+                new Scooter(
+                        "SCOOTER002",
+                        "TVS Jupiter",
+                        500,
+                        2,
+                        "Petrol",
+                        "Automatic",
+                        2,
+                        "Scooter"
+                )
+        );
+
+        manager.addVehicle(
+                new Scooter(
+                        "SCOOTER003",
+                        "Ola S1",
+                        700,
+                        2,
+                        "Electric",
+                        "Automatic",
+                        2,
+                        "Electric Scooter"
+                )
+        );
+
+        return manager;
     }
 
     // =====================================================

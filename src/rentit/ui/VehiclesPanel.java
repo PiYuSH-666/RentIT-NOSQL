@@ -16,7 +16,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
@@ -1321,11 +1320,11 @@ scrollPane.getVerticalScrollBar()
 
                     if (customerName.isEmpty()) {
 
-                        JOptionPane.showMessageDialog(
+                        RentITDialog.showMessage(
                                 dialog,
-                                "Please enter your name.",
                                 "Missing Information",
-                                JOptionPane.WARNING_MESSAGE
+                                "Please enter your name.",
+                                "OK"
                         );
 
                         nameField.requestFocus();
@@ -1335,11 +1334,11 @@ scrollPane.getVerticalScrollBar()
 
                     if (pickupLocation.isEmpty()) {
 
-                        JOptionPane.showMessageDialog(
+                        RentITDialog.showMessage(
                                 dialog,
-                                "Please enter the pickup location.",
                                 "Missing Information",
-                                JOptionPane.WARNING_MESSAGE
+                                "Please enter the pickup location.",
+                                "OK"
                         );
 
                         pickupField.requestFocus();
@@ -1349,11 +1348,11 @@ scrollPane.getVerticalScrollBar()
 
                     if (returnLocation.isEmpty()) {
 
-                        JOptionPane.showMessageDialog(
+                        RentITDialog.showMessage(
                                 dialog,
-                                "Please enter the return location.",
                                 "Missing Information",
-                                JOptionPane.WARNING_MESSAGE
+                                "Please enter the return location.",
+                                "OK"
                         );
 
                         returnField.requestFocus();
@@ -1383,17 +1382,17 @@ scrollPane.getVerticalScrollBar()
 
                         dialog.dispose();
 
-                        JOptionPane.showMessageDialog(
+                        RentITDialog.showMessage(
                                 this,
-                                "Your booking has been confirmed!\n\n"
-                                + "Vehicle: "
-                                + vehicle.getModel()
-                                + "\nDays: "
-                                + days
-                                + "\nTotal: ₹"
-                                + booking.getTotalPrice(),
                                 "Booking Confirmed",
-                                JOptionPane.INFORMATION_MESSAGE
+                                "Your booking has been confirmed!\n\n"
+                                        + "Vehicle: "
+                                        + vehicle.getModel()
+                                        + "\nDays: "
+                                        + days
+                                        + "\nTotal: ₹"
+                                        + booking.getTotalPrice(),
+                                "OK"
                         );
 
                     } catch (
@@ -1401,12 +1400,12 @@ scrollPane.getVerticalScrollBar()
                             | InsufficientCreditsException
                             | InvalidBookingException ex) {
 
-                        JOptionPane.showMessageDialog(
-                                dialog,
-                                ex.getMessage(),
-                                "Booking Failed",
-                                JOptionPane.ERROR_MESSAGE
-                        );
+                    	RentITDialog.showMessage(
+                    	        this,
+                    	        "Booking Failed",
+                    	        ex.getMessage(),
+                    	        "OK"
+                    	);
                     }
                 }
         );

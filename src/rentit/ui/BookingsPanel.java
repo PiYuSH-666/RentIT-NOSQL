@@ -429,19 +429,18 @@ public class BookingsPanel extends JPanel {
 
         cancelButton.addActionListener(e -> {
 
-            int choice =
-                    javax.swing.JOptionPane.showConfirmDialog(
-                            this,
-                            "Are you sure you want to cancel this booking?\n"
-                            + "₹" + booking.getTotalPrice()
-                            + " will be refunded to your credits.",
-                            "Cancel Booking",
-                            javax.swing.JOptionPane.YES_NO_OPTION,
-                            javax.swing.JOptionPane.WARNING_MESSAGE
-                    );
+        	boolean confirmed =
+        	        RentITDialog.showConfirm(
+        	                this,
+        	                "Cancel Booking",
+        	                "Are you sure you want to cancel this booking?\n"
+        	                        + "₹" + booking.getTotalPrice()
+        	                        + " will be refunded to your credits.",
+        	                "Yes, Cancel",
+        	                "No"
+        	        );
 
-            if (choice ==
-                    javax.swing.JOptionPane.YES_OPTION) {
+        	if (confirmed) {
 
                 booking.cancelBooking();
 
@@ -454,13 +453,13 @@ public class BookingsPanel extends JPanel {
                 
                 vehiclesPanel.refreshVehicles();
 
-                javax.swing.JOptionPane.showMessageDialog(
+                RentITDialog.showMessage(
                         this,
-                        "Booking cancelled successfully.\n"
-                        + "₹" + booking.getTotalPrice()
-                        + " has been refunded.",
                         "Booking Cancelled",
-                        javax.swing.JOptionPane.INFORMATION_MESSAGE
+                        "Booking cancelled successfully.\n"
+                                + "₹" + booking.getTotalPrice()
+                                + " has been refunded.",
+                        "OK"
                 );
             }
         });

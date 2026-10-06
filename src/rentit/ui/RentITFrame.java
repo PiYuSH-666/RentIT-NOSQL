@@ -61,6 +61,9 @@ public class RentITFrame extends JFrame {
     private CreditWallet wallet;
     private BookingsPanel bookingsPanel;
     private VehiclesPanel vehiclesPanel;
+    private JButton homeNavButton;
+    private JButton vehiclesNavButton;
+    private JButton bookingsNavButton;
    
 
     // =====================================================
@@ -566,26 +569,27 @@ public class RentITFrame extends JFrame {
                 )
         );
 
-        menuPanel.add(
+        homeNavButton =
                 createNavButton(
                         "Home",
                         true
-                )
-        );
+                );
 
-        menuPanel.add(
+        vehiclesNavButton =
                 createNavButton(
                         "Vehicles",
                         false
-                )
-        );
+                );
 
-        menuPanel.add(
+        bookingsNavButton =
                 createNavButton(
                         "My Bookings",
                         false
-                )
-        );
+                );
+
+        menuPanel.add(homeNavButton);
+        menuPanel.add(vehiclesNavButton);
+        menuPanel.add(bookingsNavButton);
 
         navigationBar.add(
                 menuPanel,
@@ -649,34 +653,97 @@ public class RentITFrame extends JFrame {
         if (text.equals("Home")) {
 
             button.addActionListener(
-                    e -> cardLayout.show(
-                            contentPanel,
-                            "HOME"
-                    )
+                    e -> {
+
+                        cardLayout.show(
+                                contentPanel,
+                                "HOME"
+                        );
+
+                        setActiveNavigation(
+                                homeNavButton
+                        );
+                    }
             );
 
         } else if (text.equals("Vehicles")) {
 
             button.addActionListener(
-                    e -> cardLayout.show(
-                            contentPanel,
-                            "VEHICLES"
-                    )
+                    e -> {
+
+                        cardLayout.show(
+                                contentPanel,
+                                "VEHICLES"
+                        );
+
+                        setActiveNavigation(
+                                vehiclesNavButton
+                        );
+                    }
             );
-        } else if (text.equals("My Bookings")) {
 
-            button.addActionListener(e -> {
+        }  else if (text.equals("My Bookings")) {
 
-                bookingsPanel.refreshBookings();
+            button.addActionListener(
+                    e -> {
 
-                cardLayout.show(
-                        contentPanel,
-                        "BOOKINGS"
-                );
-            });
+                        bookingsPanel.refreshBookings();
+
+                        cardLayout.show(
+                                contentPanel,
+                                "BOOKINGS"
+                        );
+
+                        setActiveNavigation(
+                                bookingsNavButton
+                        );
+                    }
+            );
         }
 
         return button;
+    }
+    
+    private void setActiveNavigation(
+            JButton activeButton) {
+
+        JButton[] navigationButtons = {
+                homeNavButton,
+                vehiclesNavButton,
+                bookingsNavButton
+        };
+
+        for (JButton button : navigationButtons) {
+
+            if (button == activeButton) {
+
+                button.setForeground(
+                        RENTIT_BLUE
+                );
+
+                button.setFont(
+                        new Font(
+                                "Arial",
+                                Font.BOLD,
+                                16
+                        )
+                );
+
+            } else {
+
+                button.setForeground(
+                        RENTIT_NAVY
+                );
+
+                button.setFont(
+                        new Font(
+                                "Arial",
+                                Font.PLAIN,
+                                16
+                        )
+                );
+            }
+        }
     }
 
     // =====================================================

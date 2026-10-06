@@ -18,6 +18,9 @@ public class BookingManager {
     public void addBooking(Booking booking) {
         bookings.add(booking);
     }
+    public void removeBooking(Booking booking) {
+        bookings.remove(booking);
+    }
 
     public ArrayList<Booking> getBookings() {
         return bookings;

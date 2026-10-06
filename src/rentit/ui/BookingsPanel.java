@@ -11,9 +11,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
+import javax.swing.JButton;
 
 import rentit.Booking;
 import rentit.BookingManager;
+import rentit.CreditWallet;
 
 public class BookingsPanel extends JPanel {
 
@@ -29,8 +31,20 @@ public class BookingsPanel extends JPanel {
 
     private final Color BORDER_BLUE =
             new Color(216, 231, 248);
+    private BookingManager bookingManager;
+    private JPanel bookingsList;
+    private CreditWallet wallet;
+    private JLabel creditsLabel;
+    private VehiclesPanel vehiclesPanel;
 
-    public BookingsPanel(BookingManager bookingManager) {
+    public BookingsPanel(
+            BookingManager bookingManager,
+            CreditWallet wallet,
+            VehiclesPanel vehiclesPanel)  {
+    	
+    	this.bookingManager = bookingManager;
+    	this.wallet = wallet;
+    	this.vehiclesPanel = vehiclesPanel;
 
         setLayout(new BorderLayout());
 
@@ -40,40 +54,87 @@ public class BookingsPanel extends JPanel {
         // TITLE
         // =================================================
 
-        JLabel title =
-                new JLabel("My Bookings");
+     // =================================================
+     // HEADER
+     // =================================================
 
-        title.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        30
-                )
-        );
+     JPanel headerPanel =
+             new JPanel(
+                     new BorderLayout()
+             );
 
-        title.setForeground(
-                RENTIT_NAVY
-        );
+     headerPanel.setBackground(
+             Color.WHITE
+     );
 
-        title.setBorder(
-                BorderFactory.createEmptyBorder(
-                        30,
-                        70,
-                        5,
-                        70
-                )
-        );
+     headerPanel.setBorder(
+             BorderFactory.createEmptyBorder(
+                     30,
+                     70,
+                     15,
+                     70
+             )
+     );
 
-        add(
-                title,
-                BorderLayout.NORTH
-        );
+     // Title
+
+     JLabel title =
+             new JLabel(
+                     "My Bookings"
+             );
+
+     title.setFont(
+             new Font(
+                     "Arial",
+                     Font.BOLD,
+                     30
+             )
+     );
+
+     title.setForeground(
+             RENTIT_NAVY
+     );
+
+     // Credits
+
+     creditsLabel =
+             new JLabel(
+                     "Available Credits: ₹"
+                             + wallet.getCredits()
+             );
+
+     creditsLabel.setFont(
+             new Font(
+                     "Arial",
+                     Font.BOLD,
+                     16
+             )
+     );
+
+     creditsLabel.setForeground(
+             RENTIT_BLUE
+     );
+
+     headerPanel.add(
+             title,
+             BorderLayout.WEST
+     );
+
+     headerPanel.add(
+             creditsLabel,
+             BorderLayout.EAST
+     );
+
+     add(
+             headerPanel,
+             BorderLayout.NORTH
+     );
 
         // =================================================
         // BOOKING LIST
         // =================================================
 
-        JPanel bookingsList =
+        bookingsList =
                 new JPanel();
 
         bookingsList.setLayout(
@@ -168,6 +229,7 @@ public class BookingsPanel extends JPanel {
                 scrollPane,
                 BorderLayout.CENTER
         );
+         
     }
 
     // =====================================================
@@ -203,7 +265,7 @@ public class BookingsPanel extends JPanel {
         card.setMaximumSize(
                 new Dimension(
                         Integer.MAX_VALUE,
-                        180
+                        220
                 )
         );
 
@@ -323,6 +385,90 @@ public class BookingsPanel extends JPanel {
                 BorderLayout.EAST
         );
 
+        // =================================================
+        // CANCEL BUTTON
+        // =================================================
+
+        JButton cancelButton =
+                new JButton("Cancel Booking");
+
+        cancelButton.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        cancelButton.setForeground(
+                Color.WHITE
+        );
+
+        cancelButton.setBackground(
+                RENTIT_BLUE
+        );
+
+        cancelButton.setFocusPainted(
+                false
+        );
+
+        cancelButton.setBorder(
+                BorderFactory.createEmptyBorder(
+                        8,
+                        16,
+                        8,
+                        16
+                )
+        );
+
+        cancelButton.setCursor(
+                new java.awt.Cursor(
+                        java.awt.Cursor.HAND_CURSOR
+                )
+        );
+
+        cancelButton.addActionListener(e -> {
+
+            int choice =
+                    javax.swing.JOptionPane.showConfirmDialog(
+                            this,
+                            "Are you sure you want to cancel this booking?\n"
+                            + "₹" + booking.getTotalPrice()
+                            + " will be refunded to your credits.",
+                            "Cancel Booking",
+                            javax.swing.JOptionPane.YES_NO_OPTION,
+                            javax.swing.JOptionPane.WARNING_MESSAGE
+                    );
+
+            if (choice ==
+                    javax.swing.JOptionPane.YES_OPTION) {
+
+                booking.cancelBooking();
+
+                bookingManager.removeBooking(
+                        booking
+                );
+
+                refreshBookings();
+                
+                vehiclesPanel.refreshVehicles();
+
+                javax.swing.JOptionPane.showMessageDialog(
+                        this,
+                        "Booking cancelled successfully.\n"
+                        + "₹" + booking.getTotalPrice()
+                        + " has been refunded.",
+                        "Booking Cancelled",
+                        javax.swing.JOptionPane.INFORMATION_MESSAGE
+                );
+            }
+        });
+
+        card.add(
+                cancelButton,
+                BorderLayout.SOUTH
+        );
+
         return card;
     }
 
@@ -359,4 +505,69 @@ public class BookingsPanel extends JPanel {
 
         return label;
     }
+    
+    public void refreshBookings() {
+    	
+    	creditsLabel.setText(
+    	        "Available Credits: ₹"
+    	                + wallet.getCredits()
+    	);
+
+        bookingsList.removeAll();
+
+        ArrayList<Booking> bookings =
+                bookingManager.getBookings();
+
+        if (bookings.isEmpty()) {
+
+            JLabel emptyLabel =
+                    new JLabel(
+                            "No bookings found."
+                    );
+
+            emptyLabel.setFont(
+                    new Font(
+                            "Arial",
+                            Font.PLAIN,
+                            16
+                    )
+            );
+
+            emptyLabel.setForeground(
+                    TEXT_GRAY
+            );
+
+            emptyLabel.setAlignmentX(
+                    LEFT_ALIGNMENT
+            );
+
+            bookingsList.add(
+                    emptyLabel
+            );
+
+        } else {
+
+            for (Booking booking : bookings) {
+
+                bookingsList.add(
+                        createBookingCard(
+                                booking
+                        )
+                );
+
+                bookingsList.add(
+                        javax.swing.Box.createRigidArea(
+                                new Dimension(
+                                        0,
+                                        15
+                                )
+                        )
+                );
+            }
+        }
+
+        bookingsList.revalidate();
+        bookingsList.repaint();
+    }
+    
 }

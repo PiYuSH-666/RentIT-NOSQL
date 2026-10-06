@@ -22,6 +22,12 @@ import javax.swing.SwingConstants;
 
 import rentit.RentalManager;
 import rentit.Vehicle;
+import rentit.BookingManager;
+import rentit.CreditWallet;
+import rentit.Booking;
+import rentit.VehicleNotAvailableException;
+import rentit.InsufficientCreditsException;
+import rentit.InvalidBookingException;
 
 public class VehiclesPanel extends JPanel {
 
@@ -43,12 +49,22 @@ public class VehiclesPanel extends JPanel {
 
     private final Color TEXT_GRAY =
             new Color(100, 110, 125);
+    private BookingManager bookingManager;
+    private CreditWallet wallet;
+    private RentalManager rentalManager;
 
     // =====================================================
     // CONSTRUCTOR
     // =====================================================
 
-    public VehiclesPanel(RentalManager manager) {
+    public VehiclesPanel(
+            RentalManager manager,
+            BookingManager bookingManager,
+            CreditWallet wallet) {
+    	
+    	this.bookingManager = bookingManager;
+    	this.wallet = wallet;
+    	this.rentalManager = manager;
 
         setLayout(new BorderLayout());
 
@@ -370,12 +386,128 @@ public class VehiclesPanel extends JPanel {
                     + "\nSeats: " + vehicle.getSeats()
                     + "\nBody Type: " + vehicle.getBodyType();
 
-            JOptionPane.showMessageDialog(
+            Object[] options = {
+                    "Book Now",
+                    "Close"
+            };
+
+            int choice = JOptionPane.showOptionDialog(
                     this,
                     details,
                     vehicle.getModel() + " - Details",
-                    JOptionPane.INFORMATION_MESSAGE
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    null,
+                    options,
+                    options[0]
             );
+
+            if (choice == 0) {
+
+                String customerName =
+                        JOptionPane.showInputDialog(
+                                this,
+                                "Enter your name:"
+                        );
+
+                if (customerName == null
+                        || customerName.trim().isEmpty()) {
+                    return;
+                }
+
+                String daysText =
+                        JOptionPane.showInputDialog(
+                                this,
+                                "Enter number of days:"
+                        );
+
+                if (daysText == null) {
+                    return;
+                }
+
+                int days;
+
+                try {
+                    days = Integer.parseInt(
+                            daysText.trim()
+                    );
+                } catch (NumberFormatException ex) {
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Please enter a valid number of days.",
+                            "Invalid Input",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+
+                    return;
+                }
+
+                String pickupLocation =
+                        JOptionPane.showInputDialog(
+                                this,
+                                "Enter pickup location:"
+                        );
+
+                if (pickupLocation == null
+                        || pickupLocation.trim().isEmpty()) {
+                    return;
+                }
+
+                String returnLocation =
+                        JOptionPane.showInputDialog(
+                                this,
+                                "Enter return location:"
+                        );
+
+                if (returnLocation == null
+                        || returnLocation.trim().isEmpty()) {
+                    return;
+                }
+
+                try {
+
+                    Booking booking =
+                            new Booking(
+                                    customerName.trim(),
+                                    vehicle,
+                                    days,
+                                    pickupLocation.trim(),
+                                    returnLocation.trim(),
+                                    wallet
+                            );
+
+                    bookingManager.addBooking(
+                            booking
+                    );
+                    
+                    refreshVehicles();
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Booking confirmed!\n\n"
+                            + "Vehicle: "
+                            + vehicle.getModel()
+                            + "\nDays: "
+                            + days
+                            + "\nTotal: ₹"
+                            + booking.getTotalPrice(),
+                            "Booking Confirmed",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+
+                } catch (VehicleNotAvailableException
+                        | InsufficientCreditsException
+                        | InvalidBookingException ex) {
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            ex.getMessage(),
+                            "Booking Failed",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
         });
 
         detailsButton.setFont(
@@ -489,5 +621,146 @@ public class VehiclesPanel extends JPanel {
 
             return new ImageIcon();
         }
+    }
+    
+    public void refreshVehicles() {
+
+        removeAll();
+
+        setLayout(new BorderLayout());
+        setBackground(Color.WHITE);
+
+        // Header
+        JPanel headerPanel =
+                new JPanel(
+                        new BorderLayout()
+                );
+
+        headerPanel.setBackground(
+                Color.WHITE
+        );
+
+        headerPanel.setBorder(
+                BorderFactory.createEmptyBorder(
+                        25,
+                        70,
+                        15,
+                        70
+                )
+        );
+
+        JLabel title =
+                new JLabel(
+                        "Our Vehicles",
+                        SwingConstants.LEFT
+                );
+
+        title.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        30
+                )
+        );
+
+        title.setForeground(
+                RENTIT_NAVY
+        );
+
+        JLabel subtitle =
+                new JLabel(
+                        "Choose a vehicle that fits your journey."
+                );
+
+        subtitle.setFont(
+                new Font(
+                        "Arial",
+                        Font.PLAIN,
+                        15
+                )
+        );
+
+        subtitle.setForeground(
+                TEXT_GRAY
+        );
+
+        JPanel titleText =
+                new JPanel(
+                        new GridLayout(
+                                2,
+                                1
+                        )
+                );
+
+        titleText.setOpaque(false);
+
+        titleText.add(title);
+        titleText.add(subtitle);
+
+        headerPanel.add(
+                titleText,
+                BorderLayout.WEST
+        );
+
+        add(
+                headerPanel,
+                BorderLayout.NORTH
+        );
+
+        // Vehicle grid
+        JPanel vehicleGrid =
+                new JPanel(
+                        new GridLayout(
+                                0,
+                                3,
+                                22,
+                                22
+                        )
+                );
+
+        vehicleGrid.setBackground(
+                Color.WHITE
+        );
+
+        vehicleGrid.setBorder(
+                BorderFactory.createEmptyBorder(
+                        10,
+                        70,
+                        30,
+                        70
+                )
+        );
+
+        ArrayList<Vehicle> vehicles =
+                rentalManager.getVehicles();
+
+        for (Vehicle vehicle : vehicles) {
+
+            vehicleGrid.add(
+                    createVehicleCard(vehicle)
+            );
+        }
+
+        JScrollPane scrollPane =
+                new JScrollPane(
+                        vehicleGrid
+                );
+
+        scrollPane.setBorder(null);
+
+        scrollPane.setBackground(
+                Color.WHITE
+        );
+
+        scrollPane.getVerticalScrollBar()
+                .setUnitIncrement(16);
+
+        add(
+                scrollPane,
+                BorderLayout.CENTER
+        );
+
+        revalidate();
+        repaint();
     }
 }

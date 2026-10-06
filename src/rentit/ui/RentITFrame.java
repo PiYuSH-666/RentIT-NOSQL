@@ -38,6 +38,7 @@ import rentit.Car;
 import rentit.RentalManager;
 import rentit.Scooter;
 import rentit.BookingManager;
+import rentit.CreditWallet;
 
 public class RentITFrame extends JFrame {
 
@@ -57,6 +58,9 @@ public class RentITFrame extends JFrame {
     private JPanel contentPanel;
     private RentalManager rentalManager;
     private BookingManager bookingManager;
+    private CreditWallet wallet;
+    private BookingsPanel bookingsPanel;
+    private VehiclesPanel vehiclesPanel;
 
     // =====================================================
     // CONSTRUCTOR
@@ -81,10 +85,10 @@ public class RentITFrame extends JFrame {
         rentalManager = createRentalManager();
         
         bookingManager = new BookingManager();
+        
+        wallet = new CreditWallet();
 
-        bookingManager.loadBookings(
-                rentalManager
-        );
+        
 
         JPanel mainPanel =
                 new JPanel(new BorderLayout());
@@ -271,16 +275,27 @@ public class RentITFrame extends JFrame {
                 "HOME"
         );
 
+        vehiclesPanel = new VehiclesPanel(
+                rentalManager,
+                bookingManager,
+                wallet
+        );
+
         contentPanel.add(
-                new VehiclesPanel(rentalManager),
+                vehiclesPanel,
                 "VEHICLES"
         );
         
-        contentPanel.add(
-                new BookingsPanel(bookingManager),
-                "BOOKINGS"
+        bookingsPanel = new BookingsPanel(
+                bookingManager,
+                wallet,
+                vehiclesPanel
         );
 
+        contentPanel.add(
+                bookingsPanel,
+                "BOOKINGS"
+        );
         mainPanel.add(
                 contentPanel,
                 BorderLayout.CENTER
@@ -647,12 +662,15 @@ public class RentITFrame extends JFrame {
             );
         } else if (text.equals("My Bookings")) {
 
-            button.addActionListener(
-                    e -> cardLayout.show(
-                            contentPanel,
-                            "BOOKINGS"
-                    )
-            );
+            button.addActionListener(e -> {
+
+                bookingsPanel.refreshBookings();
+
+                cardLayout.show(
+                        contentPanel,
+                        "BOOKINGS"
+                );
+            });
         }
 
         return button;

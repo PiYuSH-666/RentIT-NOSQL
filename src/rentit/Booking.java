@@ -6,9 +6,12 @@ public class Booking {
     private Vehicle vehicle;
     private int days;
     private double totalPrice;
+   
 
     private String pickupLocation;
     private String returnLocation;
+    
+    private CreditWallet wallet;
 
     public Booking(String customerName, Vehicle vehicle, int days,
                    String pickupLocation, String returnLocation,
@@ -36,6 +39,7 @@ public class Booking {
         this.days = days;
         this.pickupLocation = pickupLocation;
         this.returnLocation = returnLocation;
+        this.wallet = wallet;
 
         this.totalPrice = vehicle.getPricePerDay() * days;
 
@@ -91,6 +95,11 @@ public class Booking {
     }
 
     public void cancelBooking() {
+
         vehicle.cancelBooking();
+
+        if (wallet != null) {
+            wallet.addCredits(totalPrice);
+        }
     }
 }

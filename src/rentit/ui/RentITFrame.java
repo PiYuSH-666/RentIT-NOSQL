@@ -39,6 +39,9 @@ import rentit.RentalManager;
 import rentit.Scooter;
 import rentit.BookingManager;
 import rentit.CreditWallet;
+import rentit.AuthenticationManager;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowListener;
 
 public class RentITFrame extends JFrame {
 
@@ -64,13 +67,15 @@ public class RentITFrame extends JFrame {
     private JButton homeNavButton;
     private JButton vehiclesNavButton;
     private JButton bookingsNavButton;
-   
+    private AuthenticationManager authenticationManager;
+    private JButton logoutNavButton;
 
     // =====================================================
     // CONSTRUCTOR
     // =====================================================
 
-    public RentITFrame() {
+    public RentITFrame(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
 
         setTitle("RentIT - Vehicle Rental");
 
@@ -88,10 +93,19 @@ public class RentITFrame extends JFrame {
         
         rentalManager = createRentalManager();
         
-        bookingManager = new BookingManager();
-        
-        wallet = new CreditWallet();
-        
+        bookingManager =
+                new BookingManager();
+
+        bookingManager.setCustomer(
+                authenticationManager
+                        .getCurrentCustomer()
+                        .getUsername()
+        );
+
+        wallet =
+                authenticationManager
+                        .getCurrentWallet();
+
         loadSavedBookings();
 
         
@@ -327,6 +341,18 @@ public class RentITFrame extends JFrame {
         // Show footer only after the user maximizes the window.
         addWindowStateListener(
                 e -> updateFooterVisibility(e)
+        );
+        addWindowListener(
+                new WindowAdapter() {
+
+                    @Override
+                    public void windowClosing(
+                            WindowEvent e) {
+
+                        authenticationManager
+                                .saveCurrentCustomer();
+                    }
+                }
         );
     }
 
@@ -586,11 +612,17 @@ public class RentITFrame extends JFrame {
                         "My Bookings",
                         false
                 );
+        logoutNavButton =
+                createNavButton(
+                        "Logout",
+                        false
+                );
 
         menuPanel.add(homeNavButton);
         menuPanel.add(vehiclesNavButton);
         menuPanel.add(bookingsNavButton);
-
+        menuPanel.add(logoutNavButton);
+        
         navigationBar.add(
                 menuPanel,
                 BorderLayout.EAST
@@ -701,6 +733,11 @@ public class RentITFrame extends JFrame {
                         );
                     }
             );
+        } else if (text.equals("Logout")) {
+
+            button.addActionListener(
+                    e -> logout()
+            );
         }
 
         return button;
@@ -751,6 +788,20 @@ public class RentITFrame extends JFrame {
     // =====================================================
     // VEHICLE CARD CREATION
     // =====================================================
+    
+    private void logout() {
+
+        authenticationManager.saveCurrentCustomer();
+
+        authenticationManager.logout();
+
+        dispose();
+
+        AuthenticationFrame loginFrame =
+                new AuthenticationFrame();
+
+        loginFrame.setVisible(true);
+    }
 
     private JPanel createVehicleCard(
             String title,
@@ -2013,19 +2064,19 @@ public class RentITFrame extends JFrame {
     // MAIN
     // =====================================================
 
-    public static void main(
-            String[] args) {
+ // =====================================================
+ // MAIN
+ // =====================================================
 
-        SwingUtilities.invokeLater(
-                () -> {
+ public static void main(String[] args) {
 
-                    RentITFrame frame =
-                            new RentITFrame();
+     SwingUtilities.invokeLater(
+         () -> {
+             AuthenticationFrame frame =
+                     new AuthenticationFrame();
 
-                    frame.setVisible(
-                            true
-                    );
-                }
-        );
-    }
+             frame.setVisible(true);
+         }
+     );
+ }
 }

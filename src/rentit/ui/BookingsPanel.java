@@ -4,14 +4,21 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Window;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.JButton;
+import javax.swing.SwingUtilities;
 
 import rentit.Booking;
 import rentit.BookingManager;
@@ -31,6 +38,7 @@ public class BookingsPanel extends JPanel {
 
     private final Color BORDER_BLUE =
             new Color(216, 231, 248);
+
     private BookingManager bookingManager;
     private JPanel bookingsList;
     private CreditWallet wallet;
@@ -40,95 +48,136 @@ public class BookingsPanel extends JPanel {
     public BookingsPanel(
             BookingManager bookingManager,
             CreditWallet wallet,
-            VehiclesPanel vehiclesPanel)  {
-    	
-    	this.bookingManager = bookingManager;
-    	this.wallet = wallet;
-    	this.vehiclesPanel = vehiclesPanel;
+            VehiclesPanel vehiclesPanel) {
+
+        this.bookingManager = bookingManager;
+        this.wallet = wallet;
+        this.vehiclesPanel = vehiclesPanel;
 
         setLayout(new BorderLayout());
-
         setBackground(Color.WHITE);
 
         // =================================================
-        // TITLE
+        // HEADER
         // =================================================
 
-     // =================================================
-     // HEADER
-     // =================================================
+        JPanel headerPanel =
+                new JPanel(new BorderLayout());
 
-     JPanel headerPanel =
-             new JPanel(
-                     new BorderLayout()
-             );
+        headerPanel.setBackground(Color.WHITE);
 
-     headerPanel.setBackground(
-             Color.WHITE
-     );
+        headerPanel.setBorder(
+                BorderFactory.createEmptyBorder(
+                        30,
+                        70,
+                        15,
+                        70
+                )
+        );
 
-     headerPanel.setBorder(
-             BorderFactory.createEmptyBorder(
-                     30,
-                     70,
-                     15,
-                     70
-             )
-     );
+        // Title
+        JLabel title =
+                new JLabel("My Bookings");
 
-     // Title
+        title.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        30
+                )
+        );
 
-     JLabel title =
-             new JLabel(
-                     "My Bookings"
-             );
+        title.setForeground(RENTIT_NAVY);
 
-     title.setFont(
-             new Font(
-                     "Arial",
-                     Font.BOLD,
-                     30
-             )
-     );
+        headerPanel.add(
+                title,
+                BorderLayout.WEST
+        );
 
-     title.setForeground(
-             RENTIT_NAVY
-     );
+        // =================================================
+        // CREDIT AREA
+        // =================================================
 
-     // Credits
+        JPanel creditsPanel =
+                new JPanel();
 
-     creditsLabel =
-             new JLabel(
-                     "Available Credits: ₹"
-                             + wallet.getCredits()
-             );
+        creditsPanel.setLayout(
+                new BoxLayout(
+                        creditsPanel,
+                        BoxLayout.X_AXIS
+                )
+        );
 
-     creditsLabel.setFont(
-             new Font(
-                     "Arial",
-                     Font.BOLD,
-                     16
-             )
-     );
+        creditsPanel.setBackground(Color.WHITE);
 
-     creditsLabel.setForeground(
-             RENTIT_BLUE
-     );
+        creditsLabel =
+                new JLabel(
+                        "Available Credits: ₹"
+                                + wallet.getCredits()
+                );
 
-     headerPanel.add(
-             title,
-             BorderLayout.WEST
-     );
+        creditsLabel.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        16
+                )
+        );
 
-     headerPanel.add(
-             creditsLabel,
-             BorderLayout.EAST
-     );
+        creditsLabel.setForeground(RENTIT_BLUE);
 
-     add(
-             headerPanel,
-             BorderLayout.NORTH
-     );
+        JButton addCreditsButton =
+                new JButton("+ Add Credits");
+
+        addCreditsButton.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        addCreditsButton.setForeground(Color.WHITE);
+        addCreditsButton.setBackground(RENTIT_BLUE);
+        addCreditsButton.setFocusPainted(false);
+        addCreditsButton.setBorder(
+                BorderFactory.createEmptyBorder(
+                        9,
+                        16,
+                        9,
+                        16
+                )
+        );
+
+        addCreditsButton.setCursor(
+                new java.awt.Cursor(
+                        java.awt.Cursor.HAND_CURSOR
+                )
+        );
+
+        addCreditsButton.addActionListener(
+                e -> showAddCreditsDialog()
+        );
+
+        creditsPanel.add(creditsLabel);
+
+        creditsPanel.add(
+                Box.createRigidArea(
+                        new Dimension(15, 0)
+                )
+        );
+
+        creditsPanel.add(addCreditsButton);
+
+        headerPanel.add(
+                creditsPanel,
+                BorderLayout.EAST
+        );
+
+        add(
+                headerPanel,
+                BorderLayout.NORTH
+        );
 
         // =================================================
         // BOOKING LIST
@@ -138,15 +187,13 @@ public class BookingsPanel extends JPanel {
                 new JPanel();
 
         bookingsList.setLayout(
-                new javax.swing.BoxLayout(
+                new BoxLayout(
                         bookingsList,
-                        javax.swing.BoxLayout.Y_AXIS
+                        BoxLayout.Y_AXIS
                 )
         );
 
-        bookingsList.setBackground(
-                Color.WHITE
-        );
+        bookingsList.setBackground(Color.WHITE);
 
         bookingsList.setBorder(
                 BorderFactory.createEmptyBorder(
@@ -175,30 +222,24 @@ public class BookingsPanel extends JPanel {
                     )
             );
 
-            emptyLabel.setForeground(
-                    TEXT_GRAY
-            );
+            emptyLabel.setForeground(TEXT_GRAY);
 
             emptyLabel.setAlignmentX(
                     LEFT_ALIGNMENT
             );
 
-            bookingsList.add(
-                    emptyLabel
-            );
+            bookingsList.add(emptyLabel);
 
         } else {
 
             for (Booking booking : bookings) {
 
                 bookingsList.add(
-                        createBookingCard(
-                                booking
-                        )
+                        createBookingCard(booking)
                 );
 
                 bookingsList.add(
-                        javax.swing.Box.createRigidArea(
+                        Box.createRigidArea(
                                 new Dimension(
                                         0,
                                         15
@@ -217,19 +258,451 @@ public class BookingsPanel extends JPanel {
                 BorderFactory.createEmptyBorder()
         );
 
-        scrollPane.setBackground(
-                Color.WHITE
-        );
+        scrollPane.setBackground(Color.WHITE);
 
-        scrollPane.getViewport().setBackground(
-                Color.WHITE
-        );
+        scrollPane.getViewport()
+                .setBackground(Color.WHITE);
 
         add(
                 scrollPane,
                 BorderLayout.CENTER
         );
-         
+    }
+
+    // =====================================================
+    // ADD CREDITS DIALOG
+    // =====================================================
+
+    private void showAddCreditsDialog() {
+
+        Window owner =
+                SwingUtilities.getWindowAncestor(this);
+
+        JDialog dialog =
+                new JDialog(
+                        owner,
+                        "Add Credits",
+                        java.awt.Dialog.ModalityType.APPLICATION_MODAL
+                );
+
+        dialog.setSize(430, 330);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JPanel mainPanel =
+                new JPanel();
+
+        mainPanel.setLayout(
+                new BoxLayout(
+                        mainPanel,
+                        BoxLayout.Y_AXIS
+                )
+        );
+
+        mainPanel.setBackground(Color.WHITE);
+
+        mainPanel.setBorder(
+                BorderFactory.createEmptyBorder(
+                        25,
+                        30,
+                        25,
+                        30
+                )
+        );
+
+        // Title
+        JLabel title =
+                new JLabel("Add Credits");
+
+        title.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        24
+                )
+        );
+
+        title.setForeground(RENTIT_NAVY);
+
+        title.setAlignmentX(
+                LEFT_ALIGNMENT
+        );
+
+        mainPanel.add(title);
+
+        mainPanel.add(
+                Box.createRigidArea(
+                        new Dimension(0, 8)
+                )
+        );
+
+        JLabel subtitle =
+                new JLabel(
+                        "Choose an amount or enter your own."
+                );
+
+        subtitle.setFont(
+                new Font(
+                        "Arial",
+                        Font.PLAIN,
+                        14
+                )
+        );
+
+        subtitle.setForeground(TEXT_GRAY);
+
+        subtitle.setAlignmentX(
+                LEFT_ALIGNMENT
+        );
+
+        mainPanel.add(subtitle);
+
+        mainPanel.add(
+                Box.createRigidArea(
+                        new Dimension(0, 20)
+                )
+        );
+
+        // =================================================
+        // PRESET BUTTONS
+        // =================================================
+
+        JPanel presetPanel =
+                new JPanel(
+                        new GridLayout(
+                                1,
+                                3,
+                                10,
+                                0
+                        )
+                );
+
+        presetPanel.setBackground(Color.WHITE);
+        presetPanel.setAlignmentX(LEFT_ALIGNMENT);
+
+        JTextField amountField =
+                new JTextField();
+
+        amountField.setFont(
+                new Font(
+                        "Arial",
+                        Font.PLAIN,
+                        15
+                )
+        );
+
+        amountField.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                BORDER_BLUE
+                        ),
+                        BorderFactory.createEmptyBorder(
+                                8,
+                                10,
+                                8,
+                                10
+                        )
+                )
+        );
+
+        JButton button500 =
+                createAmountButton("₹500");
+
+        JButton button1000 =
+                createAmountButton("₹1,000");
+
+        JButton button2000 =
+                createAmountButton("₹2,000");
+
+        button500.addActionListener(
+                e -> amountField.setText("500")
+        );
+
+        button1000.addActionListener(
+                e -> amountField.setText("1000")
+        );
+
+        button2000.addActionListener(
+                e -> amountField.setText("2000")
+        );
+
+        presetPanel.add(button500);
+        presetPanel.add(button1000);
+        presetPanel.add(button2000);
+
+        mainPanel.add(presetPanel);
+
+        mainPanel.add(
+                Box.createRigidArea(
+                        new Dimension(0, 18)
+                )
+        );
+
+        // =================================================
+        // CUSTOM AMOUNT
+        // =================================================
+
+        JLabel customLabel =
+                new JLabel("Custom amount");
+
+        customLabel.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        customLabel.setForeground(RENTIT_NAVY);
+
+        customLabel.setAlignmentX(
+                LEFT_ALIGNMENT
+        );
+
+        mainPanel.add(customLabel);
+
+        mainPanel.add(
+                Box.createRigidArea(
+                        new Dimension(0, 7)
+                )
+        );
+
+        amountField.setMaximumSize(
+                new Dimension(
+                        Integer.MAX_VALUE,
+                        42
+                )
+        );
+
+        amountField.setAlignmentX(
+                LEFT_ALIGNMENT
+        );
+
+        mainPanel.add(amountField);
+
+        mainPanel.add(
+                Box.createRigidArea(
+                        new Dimension(0, 22)
+                )
+        );
+
+        // =================================================
+        // ACTION BUTTONS
+        // =================================================
+
+        JPanel buttonPanel =
+                new JPanel(
+                        new BorderLayout()
+                );
+
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setAlignmentX(LEFT_ALIGNMENT);
+
+        JButton cancelButton =
+                new JButton("Cancel");
+
+        cancelButton.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        cancelButton.setForeground(TEXT_GRAY);
+        cancelButton.setBackground(Color.WHITE);
+        cancelButton.setFocusPainted(false);
+
+        cancelButton.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                BORDER_BLUE
+                        ),
+                        BorderFactory.createEmptyBorder(
+                                8,
+                                18,
+                                8,
+                                18
+                        )
+                )
+        );
+
+        cancelButton.setCursor(
+                new java.awt.Cursor(
+                        java.awt.Cursor.HAND_CURSOR
+                )
+        );
+
+        cancelButton.addActionListener(
+                e -> dialog.dispose()
+        );
+
+        JButton addButton =
+                new JButton("Add Credits");
+
+        addButton.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        addButton.setForeground(Color.WHITE);
+        addButton.setBackground(RENTIT_BLUE);
+        addButton.setFocusPainted(false);
+
+        addButton.setBorder(
+                BorderFactory.createEmptyBorder(
+                        9,
+                        18,
+                        9,
+                        18
+                )
+        );
+
+        addButton.setCursor(
+                new java.awt.Cursor(
+                        java.awt.Cursor.HAND_CURSOR
+                )
+        );
+
+        addButton.addActionListener(
+                e -> {
+
+                    String text =
+                            amountField.getText().trim();
+
+                    if (text.isEmpty()) {
+
+                        RentITDialog.showMessage(
+                                dialog,
+                                "Invalid Amount",
+                                "Please enter a credit amount.",
+                                "OK"
+                        );
+
+                        return;
+                    }
+
+                    try {
+
+                        double amount =
+                                Double.parseDouble(text);
+
+                        if (amount <= 0) {
+
+                            RentITDialog.showMessage(
+                                    dialog,
+                                    "Invalid Amount",
+                                    "Credit amount must be greater than ₹0.",
+                                    "OK"
+                            );
+
+                            return;
+                        }
+
+                        wallet.addCredits(amount);
+
+                        refreshBookings();
+
+                        dialog.dispose();
+
+                        RentITDialog.showMessage(
+                                this,
+                                "Credits Added",
+                                "₹" + formatAmount(amount)
+                                        + " credits added successfully.",
+                                "OK"
+                        );
+
+                    } catch (NumberFormatException ex) {
+
+                        RentITDialog.showMessage(
+                                dialog,
+                                "Invalid Amount",
+                                "Please enter a valid number.",
+                                "OK"
+                        );
+                    }
+                }
+        );
+
+        buttonPanel.add(
+                cancelButton,
+                BorderLayout.WEST
+        );
+
+        buttonPanel.add(
+                addButton,
+                BorderLayout.EAST
+        );
+
+        mainPanel.add(buttonPanel);
+
+        dialog.setContentPane(mainPanel);
+        dialog.setVisible(true);
+    }
+
+    // =====================================================
+    // PRESET AMOUNT BUTTON
+    // =====================================================
+
+    private JButton createAmountButton(
+            String text) {
+
+        JButton button =
+                new JButton(text);
+
+        button.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        button.setForeground(RENTIT_BLUE);
+        button.setBackground(Color.WHITE);
+        button.setFocusPainted(false);
+
+        button.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                BORDER_BLUE
+                        ),
+                        BorderFactory.createEmptyBorder(
+                                9,
+                                10,
+                                9,
+                                10
+                        )
+                )
+        );
+
+        button.setCursor(
+                new java.awt.Cursor(
+                        java.awt.Cursor.HAND_CURSOR
+                )
+        );
+
+        return button;
+    }
+
+    // =====================================================
+    // FORMAT CREDIT AMOUNT
+    // =====================================================
+
+    private String formatAmount(
+            double amount) {
+
+        if (amount == Math.floor(amount)) {
+            return String.valueOf(
+                    (long) amount
+            );
+        }
+
+        return String.valueOf(amount);
     }
 
     // =====================================================
@@ -244,9 +717,7 @@ public class BookingsPanel extends JPanel {
                         new BorderLayout()
                 );
 
-        card.setBackground(
-                Color.WHITE
-        );
+        card.setBackground(Color.WHITE);
 
         card.setBorder(
                 BorderFactory.createCompoundBorder(
@@ -286,9 +757,7 @@ public class BookingsPanel extends JPanel {
                 )
         );
 
-        vehicleLabel.setForeground(
-                RENTIT_NAVY
-        );
+        vehicleLabel.setForeground(RENTIT_NAVY);
 
         // =================================================
         // BOOKING DETAILS
@@ -298,15 +767,13 @@ public class BookingsPanel extends JPanel {
                 new JPanel();
 
         detailsPanel.setLayout(
-                new javax.swing.BoxLayout(
+                new BoxLayout(
                         detailsPanel,
-                        javax.swing.BoxLayout.Y_AXIS
+                        BoxLayout.Y_AXIS
                 )
         );
 
-        detailsPanel.setBackground(
-                Color.WHITE
-        );
+        detailsPanel.setBackground(Color.WHITE);
 
         detailsPanel.add(
                 createDetailLabel(
@@ -362,9 +829,7 @@ public class BookingsPanel extends JPanel {
                 )
         );
 
-        priceLabel.setForeground(
-                RENTIT_BLUE
-        );
+        priceLabel.setForeground(RENTIT_BLUE);
 
         priceLabel.setHorizontalAlignment(
                 SwingConstants.RIGHT
@@ -400,17 +865,11 @@ public class BookingsPanel extends JPanel {
                 )
         );
 
-        cancelButton.setForeground(
-                Color.WHITE
-        );
+        cancelButton.setForeground(Color.WHITE);
 
-        cancelButton.setBackground(
-                RENTIT_BLUE
-        );
+        cancelButton.setBackground(RENTIT_BLUE);
 
-        cancelButton.setFocusPainted(
-                false
-        );
+        cancelButton.setFocusPainted(false);
 
         cancelButton.setBorder(
                 BorderFactory.createEmptyBorder(
@@ -429,28 +888,29 @@ public class BookingsPanel extends JPanel {
 
         cancelButton.addActionListener(e -> {
 
-        	boolean confirmed =
-        	        RentITDialog.showConfirm(
-        	                this,
-        	                "Cancel Booking",
-        	                "Are you sure you want to cancel this booking?\n"
-        	                        + "₹" + booking.getTotalPrice()
-        	                        + " will be refunded to your credits.",
-        	                "Yes, Cancel",
-        	                "No"
-        	        );
+            boolean confirmed =
+                    RentITDialog.showConfirm(
+                            this,
+                            "Cancel Booking",
+                            "Are you sure you want to cancel this booking?\n"
+                                    + "₹" + booking.getTotalPrice()
+                                    + " will be refunded to your credits.",
+                            "Yes, Cancel",
+                            "No"
+                    );
 
-        	if (confirmed) {
+            if (confirmed) {
 
                 booking.cancelBooking();
 
                 bookingManager.removeBooking(
                         booking
                 );
+
                 bookingManager.saveBookings();
 
                 refreshBookings();
-                
+
                 vehiclesPanel.refreshVehicles();
 
                 RentITDialog.showMessage(
@@ -490,9 +950,7 @@ public class BookingsPanel extends JPanel {
                 )
         );
 
-        label.setForeground(
-                TEXT_GRAY
-        );
+        label.setForeground(TEXT_GRAY);
 
         label.setBorder(
                 BorderFactory.createEmptyBorder(
@@ -505,13 +963,17 @@ public class BookingsPanel extends JPanel {
 
         return label;
     }
-    
+
+    // =====================================================
+    // REFRESH BOOKINGS
+    // =====================================================
+
     public void refreshBookings() {
-    	
-    	creditsLabel.setText(
-    	        "Available Credits: ₹"
-    	                + wallet.getCredits()
-    	);
+
+        creditsLabel.setText(
+                "Available Credits: ₹"
+                        + wallet.getCredits()
+        );
 
         bookingsList.removeAll();
 
@@ -533,30 +995,24 @@ public class BookingsPanel extends JPanel {
                     )
             );
 
-            emptyLabel.setForeground(
-                    TEXT_GRAY
-            );
+            emptyLabel.setForeground(TEXT_GRAY);
 
             emptyLabel.setAlignmentX(
                     LEFT_ALIGNMENT
             );
 
-            bookingsList.add(
-                    emptyLabel
-            );
+            bookingsList.add(emptyLabel);
 
         } else {
 
             for (Booking booking : bookings) {
 
                 bookingsList.add(
-                        createBookingCard(
-                                booking
-                        )
+                        createBookingCard(booking)
                 );
 
                 bookingsList.add(
-                        javax.swing.Box.createRigidArea(
+                        Box.createRigidArea(
                                 new Dimension(
                                         0,
                                         15
@@ -569,5 +1025,4 @@ public class BookingsPanel extends JPanel {
         bookingsList.revalidate();
         bookingsList.repaint();
     }
-    
 }

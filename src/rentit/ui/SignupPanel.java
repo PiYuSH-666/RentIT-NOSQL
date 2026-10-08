@@ -1103,7 +1103,7 @@ public class SignupPanel extends JPanel {
                 );
 
         dialog.setSize(
-                440,
+                500,
                 240
         );
 

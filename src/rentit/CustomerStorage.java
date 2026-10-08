@@ -39,6 +39,8 @@ public class CustomerStorage {
         ArrayList<Customer> customers =
                 new ArrayList<>();
 
+        boolean migratedPasswords = false;
+
         try (
             BufferedReader reader =
                     new BufferedReader(
@@ -50,8 +52,7 @@ public class CustomerStorage {
 
             while ((line = reader.readLine()) != null) {
 
-                String[] data =
-                        line.split("\\|");
+                String[] data = line.split("\\|");
 
                 if (data.length != 4) {
                     continue;
@@ -62,6 +63,21 @@ public class CustomerStorage {
                 String password = data[2];
                 double credits =
                         Double.parseDouble(data[3]);
+
+                /*
+                 * Old accounts contain plaintext passwords.
+                 * New accounts contain SHA-256 passwords.
+                 *
+                 * If an old plaintext password is found,
+                 * hash it once and mark the file for migration.
+                 */
+                if (!PasswordUtil.isHashed(password)) {
+
+                    password =
+                            PasswordUtil.hashPassword(password);
+
+                    migratedPasswords = true;
+                }
 
                 customers.add(
                         new Customer(
@@ -84,6 +100,15 @@ public class CustomerStorage {
             System.out.println(
                     "Invalid customer data."
             );
+        }
+
+        /*
+         * Save the migrated accounts back to
+         * customers.txt so plaintext passwords
+         * are replaced permanently.
+         */
+        if (migratedPasswords) {
+            saveCustomers(customers);
         }
 
         return customers;

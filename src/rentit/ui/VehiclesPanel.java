@@ -1,18 +1,29 @@
 package rentit.ui;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
-import java.awt.Image;
+import java.awt.Insets;
+import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -23,13 +34,13 @@ import javax.swing.JTextField;
 import javax.swing.JFormattedTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
-import javax.swing.plaf.basic.BasicScrollBarUI;
+import javax.swing.SwingUtilities;
 
 import rentit.Booking;
 import rentit.BookingManager;
-import rentit.CreditWallet;
 import rentit.InsufficientCreditsException;
 import rentit.InvalidBookingException;
+import rentit.CreditWallet;
 import rentit.RentalManager;
 import rentit.Vehicle;
 import rentit.VehicleNotAvailableException;
@@ -40,220 +51,770 @@ public class VehiclesPanel extends JPanel {
     // RENTIT BRAND COLORS
     // =====================================================
 
-    private final Color RENTIT_BLUE =
-            new Color(22, 119, 232);
+    private final Color RENTIT_BLUE = new Color(22, 119, 232);
+    private final Color RENTIT_NAVY = new Color(10, 29, 58);
+    private final Color TEXT_GRAY = new Color(92, 108, 130);
+    private final Color BORDER_BLUE = new Color(220, 231, 245);
+    private final Color LIGHT_BLUE = new Color(245, 249, 255);
+    private final Color TAB_BACKGROUND = new Color(248, 251, 255);
 
-    private final Color RENTIT_NAVY =
-            new Color(17, 24, 39);
+    // =====================================================
+    // BACKEND REFERENCES
+    // =====================================================
 
-    private final Color LIGHT_BLUE =
-            new Color(238, 246, 255);
-
-    private final Color BORDER_BLUE =
-            new Color(216, 231, 248);
-
-    private final Color TEXT_GRAY =
-            new Color(100, 110, 125);
-
+    private RentalManager rentalManager;
     private BookingManager bookingManager;
     private CreditWallet wallet;
-    private RentalManager rentalManager;
 
-    // Cache the three scaled vehicle images so each vehicle card
-    // does not read and scale the same image again.
-    private ImageIcon carImageIcon;
-    private ImageIcon bikeImageIcon;
-    private ImageIcon scooterImageIcon;
+    // =====================================================
+    // UI FIELDS
+    // =====================================================
 
-    // Current vehicle category shown on the page.
-    // "All" shows every vehicle.
+    private JPanel cardsPanel;
+    private JTextField searchField;
     private String selectedCategory = "All";
 
+    private JButton allButton;
+    private JButton carsButton;
+    private JButton bikesButton;
+    private JButton scootersButton;
+
     // =====================================================
-    // CONSTRUCTOR
+    // CONSTRUCTORS
     // =====================================================
 
+    /*
+     * Main constructor used by the current RentITFrame.
+     * The backend objects are reused; this class only changes
+     * the presentation of the vehicle list.
+     */
     public VehiclesPanel(
             RentalManager manager,
             BookingManager bookingManager,
             CreditWallet wallet) {
 
+        this.rentalManager = manager;
         this.bookingManager = bookingManager;
         this.wallet = wallet;
-        this.rentalManager = manager;
 
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        buildUI();
+    }
 
-        // Load each vehicle image once and reuse it for all cards.
-        carImageIcon = loadVehicleImage("images/car.png");
-        bikeImageIcon = loadVehicleImage("images/bike.png");
-        scooterImageIcon = loadVehicleImage("images/scooter.png");
-
-        // Keep the original navigation behavior: the Vehicles page
-        // is ready before the user clicks the Vehicles tab.
-        buildVehiclePage();
+    /*
+     * Compatibility constructor for older code.
+     */
+    public VehiclesPanel(RentalManager manager) {
+        this(manager, null, null);
     }
 
     // =====================================================
-    // BUILD VEHICLE PAGE
+    // BUILD UI
     // =====================================================
 
-    private void buildVehiclePage() {
-
-        removeAll();
+    private void buildUI() {
 
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
 
-        // -------------------------------------------------
-        // HEADER
-        // -------------------------------------------------
+        JPanel page = new JPanel(new BorderLayout());
+        page.setBackground(Color.WHITE);
 
-        JPanel headerPanel =
-                new JPanel(new BorderLayout());
+        page.add(createHeroSection(), BorderLayout.NORTH);
+        page.add(createMainContent(), BorderLayout.CENTER);
 
-        headerPanel.setBackground(Color.WHITE);
+        JScrollPane scrollPane = new JScrollPane(page);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setHorizontalScrollBarPolicy(
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setVerticalScrollBarPolicy(
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-        headerPanel.setBorder(
+        scrollPane.getVerticalScrollBar().setUnitIncrement(18);
+        scrollPane.getViewport().setBackground(Color.WHITE);
+
+        styleVehicleScrollBar(
+                scrollPane.getVerticalScrollBar()
+        );
+
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    // =====================================================
+    // HERO
+    // =====================================================
+
+    private JPanel createHeroSection() {
+
+        JPanel hero = new HeroPanel();
+
+        hero.setPreferredSize(new Dimension(1200, 280));
+
+        return hero;
+    }
+
+    private class HeroPanel extends JPanel {
+
+        private BufferedImage backgroundImage;
+
+        HeroPanel() {
+
+            setBackground(LIGHT_BLUE);
+
+            backgroundImage = loadImage(
+                    "images/vehicles_hero.jpg"
+            );
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+
+            super.paintComponent(g);
+
+            Graphics2D g2 = (Graphics2D) g.create();
+
+            g2.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON
+            );
+
+            int width = getWidth();
+            int height = getHeight();
+
+            if (backgroundImage != null) {
+
+                double imageRatio =
+                        (double) backgroundImage.getWidth()
+                                / backgroundImage.getHeight();
+
+                double panelRatio =
+                        (double) width / height;
+
+                int drawWidth;
+                int drawHeight;
+
+                if (imageRatio > panelRatio) {
+                    drawHeight = height;
+                    drawWidth = (int) (height * imageRatio);
+                } else {
+                    drawWidth = width;
+                    drawHeight = (int) (width / imageRatio);
+                }
+
+                int x = (width - drawWidth) / 2;
+                int y = (height - drawHeight) / 2;
+
+                g2.drawImage(
+                        backgroundImage,
+                        x,
+                        y,
+                        drawWidth,
+                        drawHeight,
+                        null
+                );
+
+                // Keep the text readable.
+                g2.setColor(new Color(255, 255, 255, 178));
+                g2.fillRect(0, 0, width, height);
+
+            } else {
+
+                // Clean fallback until the user adds the hero image.
+                g2.setColor(new Color(244, 249, 255));
+                g2.fillRect(0, 0, width, height);
+
+                g2.setColor(new Color(222, 237, 255));
+                g2.fillOval(
+                        width - 260,
+                        -110,
+                        390,
+                        300
+                );
+            }
+
+            int left = Math.max(60, (width - 1080) / 2);
+
+            // Small blue line.
+            g2.setColor(RENTIT_BLUE);
+            g2.fillRoundRect(
+                    left,
+                    38,
+                    28,
+                    4,
+                    4,
+                    4
+            );
+
+            // Main heading.
+            g2.setFont(new Font(
+                    "Arial",
+                    Font.BOLD,
+                    40
+            ));
+
+            g2.setColor(RENTIT_NAVY);
+
+            g2.drawString(
+                    "Explore Our",
+                    left,
+                    91
+            );
+
+            int firstWidth =
+                    g2.getFontMetrics().stringWidth(
+                            "Explore Our"
+                    );
+
+            g2.setColor(RENTIT_BLUE);
+
+            g2.drawString(
+                    " Vehicles",
+                    left + firstWidth,
+                    91
+            );
+
+            // Subtitle.
+            g2.setFont(new Font(
+                    "Arial",
+                    Font.PLAIN,
+                    17
+            ));
+
+            g2.setColor(TEXT_GRAY);
+
+            g2.drawString(
+                    "Find the perfect car, bike or scooter for your next journey.",
+                    left,
+                    125
+            );
+
+            g2.dispose();
+        }
+    }
+
+    // =====================================================
+    // MAIN CONTENT
+    // =====================================================
+
+    private JPanel createMainContent() {
+
+        JPanel content = new JPanel(new BorderLayout());
+
+        content.setBackground(Color.WHITE);
+
+        content.setBorder(
                 BorderFactory.createEmptyBorder(
-                        25,
-                        70,
-                        15,
-                        70
+                        14,
+                        64,
+                        30,
+                        64
                 )
         );
 
-        JLabel title =
-                new JLabel(
-                        "Our Vehicles",
-                        SwingConstants.LEFT
-                );
-
-        title.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        30
-                )
-        );
-
-        title.setForeground(RENTIT_NAVY);
-
-        JLabel subtitle =
-                new JLabel(
-                        "Choose a vehicle that fits your journey."
-                );
-
-        subtitle.setFont(
-                new Font(
-                        "Arial",
-                        Font.PLAIN,
-                        15
-                )
-        );
-
-        subtitle.setForeground(TEXT_GRAY);
-
-        JPanel titleText =
-                new JPanel(
-                        new GridLayout(
-                                2,
-                                1
-                        )
-                );
-
-        titleText.setOpaque(false);
-
-        titleText.add(title);
-        titleText.add(subtitle);
-
-        headerPanel.add(
-                titleText,
-                BorderLayout.WEST
-        );
-
-        add(
-                headerPanel,
+        content.add(
+                createToolbar(),
                 BorderLayout.NORTH
         );
 
-        // -------------------------------------------------
-        // VEHICLE GRID
-        // -------------------------------------------------
+        cardsPanel = new JPanel();
 
-        JPanel vehicleGrid =
-                new JPanel(
-                        new GridLayout(
-                                0,
-                                3,
-                                22,
-                                22
-                        )
-                );
+        cardsPanel.setBackground(Color.WHITE);
 
-        vehicleGrid.setBackground(Color.WHITE);
-
-        vehicleGrid.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10,
-                        70,
-                        30,
-                        70
+        cardsPanel.setLayout(
+                new GridLayout(
+                        0,
+                        3,
+                        18,
+                        18
                 )
         );
+
+        cardsPanel.setBorder(
+                BorderFactory.createEmptyBorder(
+                        18,
+                        0,
+                        0,
+                        0
+                )
+        );
+
+        content.add(
+                cardsPanel,
+                BorderLayout.CENTER
+        );
+
+        refreshVehicleCards();
+
+        return content;
+    }
+
+    // =====================================================
+    // TOOLBAR
+    // =====================================================
+
+    private JPanel createToolbar() {
+
+        JPanel toolbar = new JPanel(new BorderLayout(16, 0));
+
+        toolbar.setOpaque(false);
+
+        JPanel tabs = new JPanel();
+
+        tabs.setOpaque(false);
+
+        allButton = createTabButton(
+                "•   All Vehicles",
+                true
+        );
+
+        carsButton = createTabButton(
+                "•   Cars",
+                false
+        );
+
+        bikesButton = createTabButton(
+                "•   Bikes",
+                false
+        );
+
+        scootersButton = createTabButton(
+                "•   Scooters",
+                false
+        );
+
+        ButtonGroup group = new ButtonGroup();
+
+        group.add(allButton);
+        group.add(carsButton);
+        group.add(bikesButton);
+        group.add(scootersButton);
+
+        tabs.add(allButton);
+        tabs.add(Box.createHorizontalStrut(8));
+        tabs.add(carsButton);
+        tabs.add(Box.createHorizontalStrut(8));
+        tabs.add(bikesButton);
+        tabs.add(Box.createHorizontalStrut(8));
+        tabs.add(scootersButton);
+
+        toolbar.add(
+                tabs,
+                BorderLayout.WEST
+        );
+
+        JPanel searchHolder =
+                new JPanel(new BorderLayout());
+
+        searchHolder.setOpaque(false);
+
+        searchField = new JTextField();
+
+        searchField.setFont(
+                new Font(
+                        "Arial",
+                        Font.PLAIN,
+                        13
+                )
+        );
+
+        searchField.setForeground(TEXT_GRAY);
+        searchField.setText("Search vehicles...");
+
+        searchField.addFocusListener(
+                new java.awt.event.FocusAdapter() {
+                    @Override
+                    public void focusGained(java.awt.event.FocusEvent e) {
+                        if (searchField.getText().equals("Search vehicles...")) {
+                            searchField.setText("");
+                            searchField.setForeground(RENTIT_NAVY);
+                        }
+                    }
+                    @Override
+                    public void focusLost(java.awt.event.FocusEvent e) {
+                        if (searchField.getText().trim().isEmpty()) {
+                            searchField.setText("Search vehicles...");
+                            searchField.setForeground(TEXT_GRAY);
+                        }
+                    }
+                }
+        );
+
+        searchField.setPreferredSize(
+                new Dimension(
+                        270,
+                        42
+                )
+        );
+
+        searchField.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                BORDER_BLUE,
+                                1
+                        ),
+                        BorderFactory.createEmptyBorder(
+                                0,
+                                14,
+                                0,
+                                14
+                        )
+                )
+        );
+
+        searchField.addActionListener(
+                this::searchAction
+        );
+
+        searchField.getDocument()
+                .addDocumentListener(
+                        new javax.swing.event.DocumentListener() {
+
+                            @Override
+                            public void insertUpdate(
+                                    javax.swing.event.DocumentEvent e) {
+                                refreshVehicleCards();
+                            }
+
+                            @Override
+                            public void removeUpdate(
+                                    javax.swing.event.DocumentEvent e) {
+                                refreshVehicleCards();
+                            }
+
+                            @Override
+                            public void changedUpdate(
+                                    javax.swing.event.DocumentEvent e) {
+                                refreshVehicleCards();
+                            }
+                        }
+                );
+
+        searchHolder.add(
+                searchField,
+                BorderLayout.CENTER
+        );
+
+        toolbar.add(
+                searchHolder,
+                BorderLayout.EAST
+        );
+
+        return toolbar;
+    }
+
+    private JButton createTabButton(
+            String text,
+            boolean active) {
+
+        JButton button = new JButton(text);
+
+        button.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        button.setForeground(
+                active
+                        ? Color.WHITE
+                        : RENTIT_NAVY
+        );
+
+        button.setBackground(
+                active
+                        ? RENTIT_BLUE
+                        : TAB_BACKGROUND
+        );
+
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setCursor(
+                new Cursor(Cursor.HAND_CURSOR)
+        );
+
+        button.setMargin(
+                new Insets(
+                        0,
+                        16,
+                        0,
+                        16
+                )
+        );
+
+        button.setPreferredSize(
+                new Dimension(
+                        145,
+                        42
+                )
+        );
+
+        button.addActionListener(
+                e -> {
+
+                    if (button == allButton) {
+                        selectedCategory = "All";
+                    } else if (button == carsButton) {
+                        selectedCategory = "Car";
+                    } else if (button == bikesButton) {
+                        selectedCategory = "Bike";
+                    } else {
+                        selectedCategory = "Scooter";
+                    }
+
+                    updateTabStyles();
+                    refreshVehicleCards();
+                }
+        );
+
+        return button;
+    }
+
+    private void updateTabStyles() {
+
+        setTabStyle(
+                allButton,
+                selectedCategory.equals("All")
+        );
+
+        setTabStyle(
+                carsButton,
+                selectedCategory.equals("Car")
+        );
+
+        setTabStyle(
+                bikesButton,
+                selectedCategory.equals("Bike")
+        );
+
+        setTabStyle(
+                scootersButton,
+                selectedCategory.equals("Scooter")
+        );
+    }
+
+    private void setTabStyle(
+            JButton button,
+            boolean active) {
+
+        button.setBackground(
+                active
+                        ? RENTIT_BLUE
+                        : TAB_BACKGROUND
+        );
+
+        button.setForeground(
+                active
+                        ? Color.WHITE
+                        : RENTIT_NAVY
+        );
+    }
+
+    private void searchAction(ActionEvent e) {
+        refreshVehicleCards();
+    }
+
+    // =====================================================
+    // FILTER API USED BY RENTITFRAME
+    // =====================================================
+
+    public void setSelectedCategory(
+            String category) {
+
+        if (category == null) {
+            category = "All";
+        }
+
+        if (category.equalsIgnoreCase("Cars")
+                || category.equalsIgnoreCase("Car")) {
+
+            selectedCategory = "Car";
+
+        } else if (category.equalsIgnoreCase("Bikes")
+                || category.equalsIgnoreCase("Bike")) {
+
+            selectedCategory = "Bike";
+
+        } else if (category.equalsIgnoreCase("Scooters")
+                || category.equalsIgnoreCase("Scooter")) {
+
+            selectedCategory = "Scooter";
+
+        } else {
+
+            selectedCategory = "All";
+        }
+
+        updateTabStyles();
+
+        if (searchField != null) {
+            searchField.setText("Search vehicles...");
+            searchField.setForeground(TEXT_GRAY);
+        }
+
+        refreshVehicleCards();
+    }
+
+    // =====================================================
+    // VEHICLE CARDS
+    // =====================================================
+
+    /**
+     * Compatibility method used by BookingsPanel after a booking is cancelled.
+     * It keeps the existing public API while the new UI uses refreshVehicleCards().
+     */
+    public void refreshVehicles() {
+        refreshVehicleCards();
+    }
+
+    private void refreshVehicleCards() {
+
+        if (cardsPanel == null || rentalManager == null) {
+            return;
+        }
+
+        cardsPanel.removeAll();
+
+        String searchText = "";
+
+        if (searchField != null) {
+            searchText =
+                    searchField.getText()
+                            .trim()
+                            .toLowerCase();
+            if (searchText.equals("search vehicles...")) {
+                searchText = "";
+            }
+        }
 
         ArrayList<Vehicle> vehicles =
                 rentalManager.getVehicles();
 
+        int shown = 0;
+
         for (Vehicle vehicle : vehicles) {
 
-            if (!selectedCategory.equalsIgnoreCase("All")
-                    && !vehicle.getVehicleType()
-                            .equalsIgnoreCase(selectedCategory)) {
-                continue;
-            }
+            boolean categoryMatches =
+                    selectedCategory.equals("All")
+                            || vehicle.getVehicleType()
+                                    .equalsIgnoreCase(
+                                            selectedCategory
+                                    );
 
-            vehicleGrid.add(
-                    createVehicleCard(vehicle)
+            boolean searchMatches =
+                    searchText.isEmpty()
+                            || vehicle.getModel()
+                                    .toLowerCase()
+                                    .contains(searchText)
+                            || vehicle.getVehicleType()
+                                    .toLowerCase()
+                                    .contains(searchText)
+                            || vehicle.getBodyType()
+                                    .toLowerCase()
+                                    .contains(searchText);
+
+            if (categoryMatches && searchMatches) {
+
+                cardsPanel.add(
+                        createVehicleCard(vehicle)
+                );
+
+                shown++;
+            }
+        }
+
+        if (shown == 0) {
+            cardsPanel.setLayout(
+                    new BorderLayout()
+            );
+
+            JPanel emptyPanel =
+                    new JPanel(
+                            new BorderLayout()
+                    );
+
+            emptyPanel.setBackground(Color.WHITE);
+
+            JLabel empty =
+                    new JLabel(
+                            "No vehicles found.",
+                            SwingConstants.CENTER
+                    );
+
+            empty.setFont(
+                    new Font(
+                            "Arial",
+                            Font.BOLD,
+                            18
+                    )
+            );
+
+            empty.setForeground(TEXT_GRAY);
+
+            emptyPanel.add(
+                    empty,
+                    BorderLayout.CENTER
+            );
+
+            cardsPanel.add(
+                    emptyPanel,
+                    BorderLayout.CENTER
+            );
+
+        } else {
+
+            cardsPanel.setLayout(
+                    new GridLayout(
+                            0,
+                            3,
+                            18,
+                            18
+                    )
             );
         }
 
-        // -------------------------------------------------
-        // SCROLL PANE
-        // -------------------------------------------------
+        cardsPanel.revalidate();
+        cardsPanel.repaint();
+    }
 
-        JScrollPane scrollPane =
-                new JScrollPane(vehicleGrid);
+    private JPanel createVehicleCard(
+            Vehicle vehicle) {
 
-        scrollPane.setBorder(null);
+        VehicleCard card =
+                new VehicleCard(vehicle);
 
-        scrollPane.setBackground(Color.WHITE);
+        return card;
+    }
 
-        scrollPane.getVerticalScrollBar()
-        .setUnitIncrement(16);
+    // =====================================================
+    // VEHICLES PAGE SCROLLBAR
+    // =====================================================
 
-scrollPane.getVerticalScrollBar()
-        .setPreferredSize(
-                new Dimension(
-                        10,
-                        Integer.MAX_VALUE
+    private void styleVehicleScrollBar(
+            javax.swing.JScrollBar scrollBar) {
+
+        scrollBar.setPreferredSize(
+                new Dimension(12, 0)
+        );
+
+        scrollBar.setUnitIncrement(18);
+
+        scrollBar.setOpaque(true);
+
+        scrollBar.setBackground(
+                new Color(
+                        245,
+                        247,
+                        250
                 )
         );
 
-scrollPane.getVerticalScrollBar()
-        .setUI(
-                new BasicScrollBarUI() {
+        scrollBar.setBorder(
+                BorderFactory.createEmptyBorder()
+        );
 
-                    @Override
-                    protected void configureScrollBarColors() {
-
-                        thumbColor =
-                                RENTIT_BLUE;
-
-                        trackColor =
-                                Color.WHITE;
-                    }
+        scrollBar.setUI(
+                new javax.swing.plaf.basic.BasicScrollBarUI() {
 
                     @Override
                     protected JButton createDecreaseButton(
@@ -270,23 +831,59 @@ scrollPane.getVerticalScrollBar()
                     }
 
                     @Override
+                    protected void paintTrack(
+                            Graphics g,
+                            javax.swing.JComponent c,
+                            java.awt.Rectangle trackBounds) {
+
+                        Graphics2D g2 =
+                                (Graphics2D) g.create();
+
+                        g2.setRenderingHint(
+                                RenderingHints.KEY_ANTIALIASING,
+                                RenderingHints.VALUE_ANTIALIAS_ON
+                        );
+
+                        g2.setColor(
+                                new Color(
+                                        242,
+                                        244,
+                                        247
+                                )
+                        );
+
+                        g2.fillRoundRect(
+                                trackBounds.x + 3,
+                                trackBounds.y,
+                                Math.max(
+                                        1,
+                                        trackBounds.width - 6
+                                ),
+                                trackBounds.height,
+                                8,
+                                8
+                        );
+
+                        g2.dispose();
+                    }
+
+                    @Override
                     protected void paintThumb(
-                            java.awt.Graphics g,
+                            Graphics g,
                             javax.swing.JComponent c,
                             java.awt.Rectangle thumbBounds) {
 
-                        if (thumbBounds.isEmpty()
-                                || !scrollbar.isEnabled()) {
+                        if (!scrollbar.isEnabled()
+                                || thumbBounds.isEmpty()) {
                             return;
                         }
 
-                        java.awt.Graphics2D g2 =
-                                (java.awt.Graphics2D)
-                                        g.create();
+                        Graphics2D g2 =
+                                (Graphics2D) g.create();
 
                         g2.setRenderingHint(
-                                java.awt.RenderingHints.KEY_ANTIALIASING,
-                                java.awt.RenderingHints.VALUE_ANTIALIAS_ON
+                                RenderingHints.KEY_ANTIALIASING,
+                                RenderingHints.VALUE_ANTIALIAS_ON
                         );
 
                         g2.setColor(
@@ -296,7 +893,10 @@ scrollPane.getVerticalScrollBar()
                         g2.fillRoundRect(
                                 thumbBounds.x + 2,
                                 thumbBounds.y,
-                                thumbBounds.width - 4,
+                                Math.max(
+                                        1,
+                                        thumbBounds.width - 4
+                                ),
                                 thumbBounds.height,
                                 8,
                                 8
@@ -331,53 +931,619 @@ scrollPane.getVerticalScrollBar()
                                 )
                         );
 
+                        button.setVisible(false);
+
                         return button;
                     }
                 }
         );
-
-        add(
-                scrollPane,
-                BorderLayout.CENTER
-        );
-
-        revalidate();
-        repaint();
     }
 
     // =====================================================
-    // VEHICLE CARD
+    // MODERN VEHICLE CARD
     // =====================================================
 
-    private JPanel createVehicleCard(
-            Vehicle vehicle) {
+    private class VehicleCard extends JPanel {
 
-        JPanel card =
-                new JPanel(
-                        new BorderLayout()
+        private final Vehicle vehicle;
+        private boolean hovered;
+
+        VehicleCard(Vehicle vehicle) {
+
+            this.vehicle = vehicle;
+
+            setLayout(
+                    new BorderLayout()
+            );
+
+            setOpaque(false);
+
+            setPreferredSize(
+                    new Dimension(
+                            330,
+                            350
+                    )
+            );
+
+            setCursor(
+                    new Cursor(
+                            Cursor.HAND_CURSOR
+                    )
+            );
+
+            addMouseListener(
+                    new MouseAdapter() {
+
+                        @Override
+                        public void mouseEntered(
+                                MouseEvent e) {
+
+                            hovered = true;
+                            repaint();
+                        }
+
+                        @Override
+                        public void mouseExited(
+                                MouseEvent e) {
+
+                            hovered = false;
+                            repaint();
+                        }
+                    }
+            );
+
+            add(
+                    createCardImageArea(),
+                    BorderLayout.NORTH
+            );
+
+            add(
+                    createCardInformation(),
+                    BorderLayout.CENTER
+            );
+
+            add(
+                    createCardButton(),
+                    BorderLayout.SOUTH
+            );
+        }
+
+        private JPanel createCardImageArea() {
+
+            JPanel imageArea =
+                    new JPanel(
+                            new BorderLayout()
+                    ) {
+
+                        @Override
+                        protected void paintComponent(
+                                Graphics g) {
+
+                            Graphics2D g2 =
+                                    (Graphics2D) g.create();
+
+                            g2.setRenderingHint(
+                                    RenderingHints.KEY_ANTIALIASING,
+                                    RenderingHints.VALUE_ANTIALIAS_ON
+                            );
+
+                            g2.setColor(
+                                    new Color(
+                                            247,
+                                            250,
+                                            254
+                                    )
+                            );
+
+                            g2.fillRoundRect(
+                                    0,
+                                    0,
+                                    getWidth(),
+                                    getHeight(),
+                                    18,
+                                    18
+                            );
+
+                            g2.dispose();
+
+                            super.paintComponent(g);
+                        }
+                    };
+
+            imageArea.setOpaque(false);
+
+            imageArea.setPreferredSize(
+                    new Dimension(
+                            330,
+                            160
+                    )
+            );
+
+            BufferedImage image =
+                    loadImage(
+                            getVehicleImagePath(
+                                    vehicle
+                            )
+                    );
+
+            JLabel imageLabel =
+                    new JLabel();
+
+            imageLabel.setHorizontalAlignment(
+                    SwingConstants.CENTER
+            );
+
+            imageLabel.setVerticalAlignment(
+                    SwingConstants.CENTER
+            );
+
+            if (image != null) {
+
+                int maxWidth = 275;
+                int maxHeight = 140;
+
+                double ratio =
+                        (double) image.getWidth()
+                                / image.getHeight();
+
+                int width = maxWidth;
+                int height =
+                        (int) (width / ratio);
+
+                if (height > maxHeight) {
+                    height = maxHeight;
+                    width =
+                            (int) (height * ratio);
+                }
+
+                java.awt.Image scaled =
+                        image.getScaledInstance(
+                                width,
+                                height,
+                                java.awt.Image.SCALE_SMOOTH
+                        );
+
+                imageLabel.setIcon(
+                        new javax.swing.ImageIcon(
+                                scaled
+                        )
                 );
 
-        card.setBackground(Color.WHITE);
+            } else {
 
-        card.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                BORDER_BLUE,
-                                1
-                        ),
-                        BorderFactory.createEmptyBorder(
-                                12,
-                                12,
-                                12,
-                                12
+                imageLabel.setText(
+                        vehicle.getVehicleType()
+                                .toUpperCase()
+                );
+
+                imageLabel.setFont(
+                        new Font(
+                                "Arial",
+                                Font.BOLD,
+                                14
                         )
-                )
+                );
+
+                imageLabel.setForeground(
+                        RENTIT_BLUE
+                );
+            }
+
+            JPanel badgeHolder =
+                    new JPanel(
+                            new BorderLayout()
+                    );
+
+            badgeHolder.setOpaque(false);
+
+            badgeHolder.setBorder(
+                    BorderFactory.createEmptyBorder(
+                            12,
+                            0,
+                            0,
+                            12
+                    )
+            );
+
+            JLabel badge =
+                    new JLabel(
+                            "•  " + vehicle.getVehicleType()
+                    );
+
+            badge.setHorizontalAlignment(
+                    SwingConstants.CENTER
+            );
+
+            badge.setFont(
+                    new Font(
+                            "Arial",
+                            Font.BOLD,
+                            12
+                    )
+            );
+
+            badge.setForeground(Color.WHITE);
+
+            badge.setBackground(
+                    new Color(
+                            67,
+                            154,
+                            240
+                    )
+            );
+
+            badge.setOpaque(true);
+
+            badge.setBorder(
+                    BorderFactory.createEmptyBorder(
+                            6,
+                            11,
+                            6,
+                            11
+                    )
+            );
+
+            badgeHolder.add(
+                    badge,
+                    BorderLayout.EAST
+            );
+
+            imageArea.add(
+                    imageLabel,
+                    BorderLayout.CENTER
+            );
+
+            imageArea.add(
+                    badgeHolder,
+                    BorderLayout.NORTH
+            );
+
+            return imageArea;
+        }
+
+        private JPanel createCardInformation() {
+
+            JPanel information =
+                    new JPanel();
+
+            information.setLayout(
+                    new BoxLayout(
+                            information,
+                            BoxLayout.Y_AXIS
+                    )
+            );
+
+            information.setOpaque(false);
+
+            information.setBorder(
+                    BorderFactory.createEmptyBorder(
+                            10,
+                            14,
+                            8,
+                            14
+                    )
+            );
+
+            JLabel model =
+                    new JLabel(
+                            vehicle.getModel()
+                    );
+
+            model.setFont(
+                    new Font(
+                            "Arial",
+                            Font.BOLD,
+                            17
+                    )
+            );
+
+            model.setForeground(
+                    RENTIT_NAVY
+            );
+
+            information.add(model);
+
+            information.add(
+                    Box.createVerticalStrut(7)
+            );
+
+            JPanel specs =
+                    new JPanel(
+                            new GridLayout(
+                                    1,
+                                    3,
+                                    5,
+                                    0
+                            )
+                    );
+
+            specs.setOpaque(false);
+
+            specs.add(
+                    createSpecItem(
+                            "SEAT",
+                            vehicle.getSeats()
+                                    + " Seater",
+                            1
+                    )
+            );
+
+            specs.add(
+                    createSpecItem(
+                            "FUEL",
+                            vehicle.getFuelType(),
+                            2
+                    )
+            );
+
+            specs.add(
+                    createSpecItem(
+                            "GEAR",
+                            vehicle.getTransmission(),
+                            3
+                    )
+            );
+
+            information.add(specs);
+
+            information.add(
+                    Box.createVerticalStrut(8)
+            );
+
+            JLabel price =
+                    new JLabel(
+                            formatPrice(
+                                    vehicle.getPricePerDay()
+                            )
+                            + " / day"
+                    );
+
+            price.setFont(
+                    new Font(
+                            "Arial",
+                            Font.BOLD,
+                            20
+                    )
+            );
+
+            price.setForeground(
+                    RENTIT_NAVY
+            );
+
+            information.add(price);
+
+            return information;
+        }
+
+        private JPanel createSpecItem(
+                String label,
+                String value,
+                int iconType) {
+
+            JPanel item =
+                    new JPanel(
+                            new BorderLayout(
+                                    4,
+                                    0
+                            )
+                    );
+
+            item.setOpaque(false);
+
+            JLabel icon =
+                    new JLabel(
+                            new SpecIcon(
+                                    iconType
+                            )
+                    );
+
+            JLabel text =
+                    new JLabel(
+                            "<html><span style='font-size:10px;color:#64748B;'>"
+                                    + label
+                                    + "</span><br>"
+                                    + "<span style='font-size:11px;color:#334155;'>"
+                                    + value
+                                    + "</span></html>"
+                    );
+
+            item.add(
+                    icon,
+                    BorderLayout.WEST
+            );
+
+            item.add(
+                    text,
+                    BorderLayout.CENTER
+            );
+
+            return item;
+        }
+
+        private JPanel createCardButton() {
+
+            JPanel holder =
+                    new JPanel(
+                            new BorderLayout()
+                    );
+
+            holder.setOpaque(false);
+
+            holder.setBorder(
+                    BorderFactory.createEmptyBorder(
+                            0,
+                            14,
+                            14,
+                            14
+                    )
+            );
+
+            JButton button =
+                    new JButton(
+                            "View Details  →"
+                    );
+
+            button.setFont(
+                    new Font(
+                            "Arial",
+                            Font.BOLD,
+                            13
+                    )
+            );
+
+            button.setForeground(
+                    RENTIT_BLUE
+            );
+
+            button.setBackground(
+                    Color.WHITE
+            );
+
+            button.setFocusPainted(false);
+
+            button.setCursor(
+                    new Cursor(
+                            Cursor.HAND_CURSOR
+                    )
+            );
+
+            button.setBorder(
+                    BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(
+                                    RENTIT_BLUE,
+                                    1
+                            ),
+                            BorderFactory.createEmptyBorder(
+                                    9,
+                                    10,
+                                    9,
+                                    10
+                            )
+                    )
+            );
+
+            button.addActionListener(
+                    e -> showVehicleDetails(
+                            vehicle
+                    )
+            );
+
+            holder.add(
+                    button,
+                    BorderLayout.CENTER
+            );
+
+            return holder;
+        }
+
+        @Override
+        protected void paintComponent(
+                Graphics g) {
+
+            Graphics2D g2 =
+                    (Graphics2D) g.create();
+
+            g2.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON
+            );
+
+            // Soft shadow.
+            g2.setColor(
+                    new Color(
+                            0,
+                            0,
+                            0,
+                            hovered ? 24 : 12
+                    )
+            );
+
+            g2.fillRoundRect(
+                    2,
+                    4,
+                    getWidth() - 4,
+                    getHeight() - 6,
+                    18,
+                    18
+            );
+
+            // Card background.
+            g2.setColor(Color.WHITE);
+
+            g2.fillRoundRect(
+                    0,
+                    0,
+                    getWidth() - 1,
+                    getHeight() - 8,
+                    18,
+                    18
+            );
+
+            // Border.
+            g2.setColor(
+                    hovered
+                            ? RENTIT_BLUE
+                            : BORDER_BLUE
+            );
+
+            g2.setStroke(
+                    new BasicStroke(
+                            hovered ? 1.6f : 1f
+                    )
+            );
+
+            g2.drawRoundRect(
+                    0,
+                    0,
+                    getWidth() - 1,
+                    getHeight() - 8,
+                    18,
+                    18
+            );
+
+            g2.dispose();
+
+            super.paintComponent(g);
+        }
+    }
+
+    // =====================================================
+    // VEHICLE DETAILS DIALOG
+    // =====================================================
+
+    private void showVehicleDetails(Vehicle vehicle) {
+
+        JDialog dialog =
+                new JDialog(
+                        SwingUtilities.getWindowAncestor(this),
+                        vehicle.getModel()
+                                + " - Details",
+                        java.awt.Dialog.ModalityType.APPLICATION_MODAL
+                );
+
+        dialog.setSize(
+                800,
+                455
         );
 
-        card.setPreferredSize(
-                new Dimension(
-                        300,
-                        290
+        dialog.setLocationRelativeTo(this);
+
+        JPanel root =
+                new JPanel(
+                        new BorderLayout(
+                                22,
+                                0
+                        )
+                );
+
+        root.setBackground(Color.WHITE);
+
+        root.setBorder(
+                BorderFactory.createEmptyBorder(
+                        22,
+                        24,
+                        22,
+                        24
                 )
         );
 
@@ -385,499 +1551,311 @@ scrollPane.getVerticalScrollBar()
         // IMAGE
         // -------------------------------------------------
 
-        JLabel imageLabel =
-                new JLabel(
-                        loadVehicleImage(vehicle)
-                );
-
-        imageLabel.setHorizontalAlignment(
-                SwingConstants.CENTER
-        );
-
-        imageLabel.setPreferredSize(
-                new Dimension(
-                        270,
-                        135
-                )
-        );
-
-        card.add(
-                imageLabel,
-                BorderLayout.NORTH
-        );
-
-        // -------------------------------------------------
-        // INFORMATION
-        // -------------------------------------------------
-
-        JPanel informationPanel =
-                new JPanel(
-                        new GridLayout(
-                                0,
-                                1,
-                                0,
-                                4
-                        )
-                );
-
-        informationPanel.setOpaque(false);
-
-        JLabel modelLabel =
-                new JLabel(
-                        vehicle.getModel()
-                );
-
-        modelLabel.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        19
-                )
-        );
-
-        modelLabel.setForeground(
-                RENTIT_NAVY
-        );
-
-        JLabel typeLabel =
-                new JLabel(
-                        vehicle.getVehicleType()
-                );
-
-        typeLabel.setFont(
-                new Font(
-                        "Arial",
-                        Font.PLAIN,
-                        14
-                )
-        );
-
-        typeLabel.setForeground(
-                TEXT_GRAY
-        );
-
-        JLabel priceLabel =
-                new JLabel(
-                        "₹"
-                        + vehicle.getPricePerDay()
-                        + "/day"
-                );
-
-        priceLabel.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        16
-                )
-        );
-
-        priceLabel.setForeground(
-                RENTIT_BLUE
-        );
-
-        JLabel availabilityLabel =
-                new JLabel(
-                        "Available: "
-                        + vehicle.getAvailableCount()
-                );
-
-        availabilityLabel.setFont(
-                new Font(
-                        "Arial",
-                        Font.PLAIN,
-                        14
-                )
-        );
-
-        availabilityLabel.setForeground(
-                TEXT_GRAY
-        );
-
-        informationPanel.add(modelLabel);
-        informationPanel.add(typeLabel);
-        informationPanel.add(priceLabel);
-        informationPanel.add(availabilityLabel);
-
-        card.add(
-                informationPanel,
-                BorderLayout.CENTER
-        );
-
-        // -------------------------------------------------
-        // VIEW DETAILS BUTTON
-        // -------------------------------------------------
-
-        JButton detailsButton =
-                new JButton(
-                        "View Details"
-                );
-
-        stylePrimaryButton(detailsButton);
-
-        detailsButton.addActionListener(
-                e -> showVehicleDetails(vehicle)
-        );
-
-        JPanel buttonPanel =
+        JPanel imagePanel =
                 new JPanel(
                         new BorderLayout()
                 );
 
-        buttonPanel.setOpaque(false);
-
-        buttonPanel.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10,
-                        0,
-                        0,
-                        0
+        imagePanel.setBackground(
+                new Color(
+                        246,
+                        250,
+                        255
                 )
         );
 
-        buttonPanel.add(
-                detailsButton,
-                BorderLayout.EAST
+        imagePanel.setPreferredSize(
+                new Dimension(300, 280)
         );
 
-        card.add(
-                buttonPanel,
-                BorderLayout.SOUTH
-        );
-
-        return card;
-    }
-
-    // =====================================================
-    // VEHICLE DETAILS
-    // =====================================================
-
-    private void showVehicleDetails(
-            Vehicle vehicle) {
-
-        JDialog dialog =
-                new JDialog();
-
-        dialog.setTitle(
-                vehicle.getModel()
-                        + " - Details"
-        );
-
-        dialog.setModal(true);
-
-        dialog.setSize(
-                520,
-                600
-        );
-
-        dialog.setLocationRelativeTo(this);
-
-        dialog.setResizable(false);
-
-        JPanel mainPanel =
-                new JPanel(
-                        new BorderLayout(
-                                0,
-                                15
-                        )
-                );
-
-        mainPanel.setBackground(
-                Color.WHITE
-        );
-
-        mainPanel.setBorder(
-                BorderFactory.createEmptyBorder(
-                        20,
-                        25,
-                        20,
-                        25
-                )
-        );
-
-        // -------------------------------------------------
-        // VEHICLE IMAGE
-        // -------------------------------------------------
-
-        JLabel imageLabel =
-                new JLabel(
-                        loadVehicleImage(vehicle)
-                );
-
-        imageLabel.setHorizontalAlignment(
-                SwingConstants.CENTER
-        );
-
-        imageLabel.setPreferredSize(
-                new Dimension(
-                        450,
-                        170
-                )
-        );
-
-        mainPanel.add(
-                imageLabel,
-                BorderLayout.NORTH
-        );
-
-        // -------------------------------------------------
-        // TITLE
-        // -------------------------------------------------
-
-        JLabel modelLabel =
-                new JLabel(
-                        vehicle.getModel()
-                );
-
-        modelLabel.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        25
-                )
-        );
-
-        modelLabel.setForeground(
-                RENTIT_NAVY
-        );
-
-        JLabel typeLabel =
-                new JLabel(
-                        vehicle.getVehicleType()
-                );
-
-        typeLabel.setFont(
-                new Font(
-                        "Arial",
-                        Font.PLAIN,
-                        15
-                )
-        );
-
-        typeLabel.setForeground(
-                TEXT_GRAY
-        );
-
-        JPanel titlePanel =
-                new JPanel(
-                        new GridLayout(
-                                2,
-                                1
-                        )
-                );
-
-        titlePanel.setOpaque(false);
-
-        titlePanel.add(modelLabel);
-        titlePanel.add(typeLabel);
-
-        // -------------------------------------------------
-        // PRICE BOX
-        // -------------------------------------------------
-
-        JPanel pricePanel =
-                new JPanel(
-                        new BorderLayout()
-                );
-
-        pricePanel.setBackground(
-                LIGHT_BLUE
-        );
-
-        pricePanel.setBorder(
+        imagePanel.setBorder(
                 BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(
                                 BORDER_BLUE
                         ),
                         BorderFactory.createEmptyBorder(
-                                12,
-                                15,
-                                12,
-                                15
+                                10,
+                                10,
+                                10,
+                                10
                         )
                 )
         );
 
-        JLabel priceLabel =
-                new JLabel(
-                        "₹"
-                        + vehicle.getPricePerDay()
-                        + " / day"
+        BufferedImage image =
+                loadImage(
+                        getVehicleImagePath(
+                                vehicle
+                        )
                 );
 
-        priceLabel.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        20
+        JLabel imageLabel =
+                new JLabel();
+
+        imageLabel.setHorizontalAlignment(
+                SwingConstants.CENTER
+        );
+
+        if (image != null) {
+
+            double ratio =
+                    (double) image.getWidth()
+                            / image.getHeight();
+
+            int width = 275;
+            int height =
+                    (int) (width / ratio);
+
+            if (height > 235) {
+                height = 235;
+                width =
+                        (int) (height * ratio);
+            }
+
+            imageLabel.setIcon(
+                    new javax.swing.ImageIcon(
+                            image.getScaledInstance(
+                                    width,
+                                    height,
+                                    java.awt.Image.SCALE_SMOOTH
+                            )
+                    )
+            );
+
+        } else {
+
+            imageLabel.setText(
+                    vehicle.getVehicleType()
+                            .toUpperCase()
+            );
+
+            imageLabel.setForeground(
+                    RENTIT_BLUE
+            );
+        }
+
+        imagePanel.add(
+                imageLabel,
+                BorderLayout.CENTER
+        );
+
+        root.add(
+                imagePanel,
+                BorderLayout.WEST
+        );
+
+        // -------------------------------------------------
+        // DETAILS
+        // -------------------------------------------------
+
+        JPanel details =
+                new JPanel();
+
+        details.setLayout(
+                new BoxLayout(
+                        details,
+                        BoxLayout.Y_AXIS
                 )
         );
 
-        priceLabel.setForeground(
-                RENTIT_BLUE
-        );
+        details.setOpaque(false);
 
-        JLabel availableLabel =
+        JLabel title =
                 new JLabel(
-                        "Available: "
-                        + vehicle.getAvailableCount()
+                        vehicle.getModel()
                 );
 
-        availableLabel.setFont(
+        title.setFont(
                 new Font(
                         "Arial",
                         Font.BOLD,
+                        24
+                )
+        );
+
+        title.setForeground(
+                RENTIT_NAVY
+        );
+
+        details.add(title);
+
+        JLabel type =
+                new JLabel(
+                        vehicle.getVehicleType()
+                                + "  •  "
+                                + vehicle.getBodyType()
+                );
+
+        type.setFont(
+                new Font(
+                        "Arial",
+                        Font.PLAIN,
                         14
                 )
         );
 
-        availableLabel.setForeground(
-                RENTIT_NAVY
+        type.setForeground(TEXT_GRAY);
+
+        details.add(type);
+
+        details.add(
+                Box.createVerticalStrut(14)
         );
 
-        pricePanel.add(
-                priceLabel,
-                BorderLayout.WEST
-        );
-
-        pricePanel.add(
-                availableLabel,
-                BorderLayout.EAST
-        );
-
-        // -------------------------------------------------
-        // SPECIFICATIONS
-        // -------------------------------------------------
-
-        JPanel specsPanel =
-                new JPanel(
-                        new GridLayout(
-                                2,
-                                2,
-                                10,
-                                10
+        JLabel price =
+                new JLabel(
+                        formatPrice(
+                                vehicle.getPricePerDay()
                         )
+                                + " / day"
                 );
 
-        specsPanel.setBackground(
-                Color.WHITE
+        price.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        23
+                )
         );
 
-        specsPanel.add(
-                createSpecLabel(
+        price.setForeground(
+                RENTIT_BLUE
+        );
+
+        details.add(price);
+
+        details.add(
+                Box.createVerticalStrut(18)
+        );
+
+        details.add(
+                createDialogRow(
+                        "Seats",
+                        vehicle.getSeats()
+                                + " Seater"
+                )
+        );
+
+        details.add(
+                createDialogRow(
                         "Fuel",
                         vehicle.getFuelType()
                 )
         );
 
-        specsPanel.add(
-                createSpecLabel(
+        details.add(
+                createDialogRow(
                         "Transmission",
                         vehicle.getTransmission()
                 )
         );
 
-        specsPanel.add(
-                createSpecLabel(
-                        "Seats",
-                        String.valueOf(
-                                vehicle.getSeats()
-                        )
+        details.add(
+                createDialogRow(
+                        "Availability",
+                        vehicle.getAvailableCount()
+                                + " vehicle(s)"
                 )
         );
 
-        specsPanel.add(
-                createSpecLabel(
+        details.add(
+                createDialogRow(
                         "Body Type",
                         vehicle.getBodyType()
                 )
         );
 
-        JPanel centerPanel =
+        details.add(
+                Box.createVerticalGlue()
+        );
+
+        JPanel buttons =
                 new JPanel(
-                        new BorderLayout(
-                                0,
-                                12
-                        )
-                );
-
-        centerPanel.setBackground(
-                Color.WHITE
-        );
-
-        centerPanel.add(
-                titlePanel,
-                BorderLayout.NORTH
-        );
-
-        JPanel middlePanel =
-                new JPanel(
-                        new BorderLayout(
-                                0,
-                                12
-                        )
-                );
-
-        middlePanel.setBackground(
-                Color.WHITE
-        );
-
-        middlePanel.add(
-                pricePanel,
-                BorderLayout.NORTH
-        );
-
-        middlePanel.add(
-                specsPanel,
-                BorderLayout.CENTER
-        );
-
-        centerPanel.add(
-                middlePanel,
-                BorderLayout.CENTER
-        );
-
-        mainPanel.add(
-                centerPanel,
-                BorderLayout.CENTER
-        );
-
-        // -------------------------------------------------
-        // BUTTONS
-        // -------------------------------------------------
-
-        JPanel buttonPanel =
-                new JPanel(
-                        new BorderLayout(
-                                10,
+                        new java.awt.FlowLayout(
+                                java.awt.FlowLayout.RIGHT,
+                                8,
                                 0
                         )
                 );
 
-        buttonPanel.setOpaque(false);
+        buttons.setOpaque(false);
 
-        JButton closeButton =
-                new JButton(
-                        "Close"
-                );
+        JButton close =
+                new JButton("Close");
 
-        JButton bookButton =
-                new JButton(
-                        "Book Now"
-                );
-
-        styleSecondaryButton(
-                closeButton
+        close.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
         );
 
-        stylePrimaryButton(
-                bookButton
+        close.setForeground(
+                RENTIT_NAVY
         );
 
-        closeButton.addActionListener(
+        close.setBackground(Color.WHITE);
+
+        close.setFocusPainted(false);
+
+        close.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                BORDER_BLUE
+                        ),
+                        BorderFactory.createEmptyBorder(
+                                9,
+                                20,
+                                9,
+                                20
+                        )
+                )
+        );
+
+        close.setCursor(
+                new Cursor(
+                        Cursor.HAND_CURSOR
+                )
+        );
+
+        close.addActionListener(
                 e -> dialog.dispose()
         );
 
-        bookButton.addActionListener(
+        JButton bookNow =
+                new JButton("Book Now  →");
+
+        bookNow.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        bookNow.setForeground(Color.WHITE);
+
+        bookNow.setBackground(RENTIT_BLUE);
+
+        bookNow.setFocusPainted(false);
+
+        bookNow.setBorder(
+                BorderFactory.createEmptyBorder(
+                        10,
+                        22,
+                        10,
+                        22
+                )
+        );
+
+        bookNow.setCursor(
+                new Cursor(
+                        Cursor.HAND_CURSOR
+                )
+        );
+
+        bookNow.addActionListener(
                 e -> {
 
                     dialog.dispose();
@@ -888,29 +1866,82 @@ scrollPane.getVerticalScrollBar()
                 }
         );
 
-        buttonPanel.add(
-                closeButton,
+        buttons.add(close);
+        buttons.add(bookNow);
+
+        details.add(buttons);
+
+        root.add(
+                details,
+                BorderLayout.CENTER
+        );
+
+        dialog.setContentPane(root);
+        dialog.setVisible(true);
+    }
+    
+    public void showVehicleDetailsFor(Vehicle vehicle) {
+        showVehicleDetails(vehicle);
+    }
+
+    private JPanel createDialogRow(
+            String label,
+            String value) {
+
+        JPanel row =
+                new JPanel(
+                        new BorderLayout()
+                );
+
+        row.setOpaque(false);
+
+        row.setBorder(
+                BorderFactory.createEmptyBorder(
+                        0,
+                        0,
+                        9,
+                        0
+                )
+        );
+
+        JLabel left =
+                new JLabel(label);
+
+        left.setFont(
+                new Font(
+                        "Arial",
+                        Font.PLAIN,
+                        13
+                )
+        );
+
+        left.setForeground(TEXT_GRAY);
+
+        JLabel right =
+                new JLabel(value);
+
+        right.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        13
+                )
+        );
+
+        right.setForeground(RENTIT_NAVY);
+
+        row.add(
+                left,
                 BorderLayout.WEST
         );
 
-        buttonPanel.add(
-                bookButton,
+        row.add(
+                right,
                 BorderLayout.EAST
         );
 
-        mainPanel.add(
-                buttonPanel,
-                BorderLayout.SOUTH
-        );
-
-        dialog.add(mainPanel);
-
-        dialog.setVisible(true);
+        return row;
     }
-
-    // =====================================================
-    // BOOKING FORM
-    // =====================================================
 
     private void showBookingForm(
             Vehicle vehicle) {
@@ -1459,368 +2490,318 @@ scrollPane.getVerticalScrollBar()
     }
 
     // =====================================================
-    // SPECIFICATION LABEL
+    // =====================================================
+    // BOOKING FORM HELPERS
     // =====================================================
 
-    private JLabel createSpecLabel(
-            String title,
-            String value) {
-
-        JLabel label =
-                new JLabel(
-                        "<html><b>"
-                        + title
-                        + "</b><br>"
-                        + value
-                        + "</html>"
-                );
-
-        label.setFont(
-                new Font(
-                        "Arial",
-                        Font.PLAIN,
-                        13
-                )
-        );
-
-        label.setForeground(
-                RENTIT_NAVY
-        );
-
-        label.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                BORDER_BLUE
-                        ),
-                        BorderFactory.createEmptyBorder(
-                                8,
-                                10,
-                                8,
-                                10
-                        )
-                )
-        );
-
+    private JLabel createFormLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Arial", Font.BOLD, 13));
+        label.setForeground(RENTIT_NAVY);
+        label.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
         return label;
     }
 
-    // =====================================================
-    // FORM LABEL
-    // =====================================================
-
-    private JLabel createFormLabel(
-            String text) {
-
-        JLabel label =
-                new JLabel(text);
-
-        label.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        14
-                )
-        );
-
-        label.setForeground(
-                RENTIT_NAVY
-        );
-
-        return label;
-    }
-
-    // =====================================================
-    // TEXT FIELD
-    // =====================================================
-     
-    private String getFieldValue(
-            JTextField field) {
-
-        boolean showingPlaceholder =
-                Boolean.TRUE.equals(
-                        field.getClientProperty(
-                                "showingPlaceholder"
-                        )
-                );
-
-        if (showingPlaceholder) {
-            return "";
-        }
-
-        return field.getText().trim();
-    }
-    
-    private JTextField createTextField(
-            String placeholder) {
-
-        JTextField field =
-                new JTextField();
-
-        field.setFont(
-                new Font(
-                        "Arial",
-                        Font.PLAIN,
-                        14
-                )
-        );
-
-        field.setPreferredSize(
-                new Dimension(
-                        100,
-                        38
-                )
-        );
-
-        field.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                BORDER_BLUE
-                        ),
-                        BorderFactory.createEmptyBorder(
-                                5,
-                                10,
-                                5,
-                                10
-                        )
-                )
-        );
-
-        Color placeholderColor =
-                new Color(
-                        160,
-                        170,
-                        185
-                );
-
-        Color normalColor =
-                Color.BLACK;
-
-        // Show placeholder initially
+    private JTextField createTextField(String placeholder) {
+        JTextField field = new JTextField();
+        field.setFont(new Font("Arial", Font.PLAIN, 14));
+        field.setForeground(TEXT_GRAY);
         field.setText(placeholder);
-        field.setForeground(
-                placeholderColor
-        );
-
-        field.putClientProperty(
-                "showingPlaceholder",
-                true
-        );
-
-        field.addFocusListener(
-                new java.awt.event.FocusAdapter() {
-
-                    @Override
-                    public void focusGained(
-                            java.awt.event.FocusEvent e) {
-
-                        boolean showingPlaceholder =
-                                Boolean.TRUE.equals(
-                                        field.getClientProperty(
-                                                "showingPlaceholder"
-                                        )
-                                );
-
-                        if (showingPlaceholder) {
-
-                            field.setText("");
-
-                            field.setForeground(
-                                    normalColor
-                            );
-
-                            field.putClientProperty(
-                                    "showingPlaceholder",
-                                    false
-                            );
-                        }
-                    }
-
-                    @Override
-                    public void focusLost(
-                            java.awt.event.FocusEvent e) {
-
-                        if (field.getText()
-                                .trim()
-                                .isEmpty()) {
-
-                            field.setText(
-                                    placeholder
-                            );
-
-                            field.setForeground(
-                                    placeholderColor
-                            );
-
-                            field.putClientProperty(
-                                    "showingPlaceholder",
-                                    true
-                            );
-                        }
-                    }
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_BLUE),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
+        ));
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if (field.getText().equals(placeholder)) {
+                    field.setText("");
+                    field.setForeground(RENTIT_NAVY);
                 }
-        );
-
+            }
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                if (field.getText().trim().isEmpty()) {
+                    field.setText(placeholder);
+                    field.setForeground(TEXT_GRAY);
+                }
+            }
+        });
         return field;
     }
 
-    // =====================================================
-    // PRIMARY BUTTON STYLE
-    // =====================================================
-
-    private void stylePrimaryButton(
-            JButton button) {
-
-        button.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        13
-                )
-        );
-
-        button.setForeground(
-                Color.WHITE
-        );
-
-        button.setBackground(
-                RENTIT_BLUE
-        );
-
-        button.setFocusPainted(false);
-
-        button.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10,
-                        18,
-                        10,
-                        18
-                )
-        );
-
-        button.setCursor(
-                new Cursor(
-                        Cursor.HAND_CURSOR
-                )
-        );
+    private String getFieldValue(JTextField field) {
+        String value = field.getText().trim();
+        if (value.equalsIgnoreCase("Enter your full name")
+                || value.equalsIgnoreCase("Enter pickup location")
+                || value.equalsIgnoreCase("Enter return location")) {
+            return "";
+        }
+        return value;
     }
 
-    // =====================================================
-    // SECONDARY BUTTON STYLE
-    // =====================================================
-
-    private void styleSecondaryButton(
-            JButton button) {
-
-        button.setFont(
-                new Font(
-                        "Arial",
-                        Font.BOLD,
-                        13
-                )
-        );
-
-        button.setForeground(
-                RENTIT_NAVY
-        );
-
-        button.setBackground(
-                Color.WHITE
-        );
-
+    private void stylePrimaryButton(JButton button) {
+        button.setFont(new Font("Arial", Font.BOLD, 13));
+        button.setForeground(Color.WHITE);
+        button.setBackground(RENTIT_BLUE);
         button.setFocusPainted(false);
-
-        button.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                BORDER_BLUE
-                        ),
-                        BorderFactory.createEmptyBorder(
-                                9,
-                                18,
-                                9,
-                                18
-                        )
-                )
-        );
-
-        button.setCursor(
-                new Cursor(
-                        Cursor.HAND_CURSOR
-                )
-        );
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
     }
 
-    // =====================================================
-    // VEHICLE IMAGE
+    private void styleSecondaryButton(JButton button) {
+        button.setFont(new Font("Arial", Font.BOLD, 13));
+        button.setForeground(RENTIT_NAVY);
+        button.setBackground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_BLUE),
+                BorderFactory.createEmptyBorder(9, 18, 9, 18)
+        ));
+    }
+
+    // IMAGE PATHS
     // =====================================================
 
-    private ImageIcon loadVehicleImage(
+    private String getVehicleImagePath(
             Vehicle vehicle) {
+
+        String model =
+                vehicle.getModel()
+                        .toLowerCase();
+
+        if (model.contains("swift")) {
+            return "images/maruti_swift.jpg";
+        }
+
+        if (model.contains("city")) {
+            return "images/honda_city.jpg";
+        }
+
+        if (model.contains("creta")) {
+            return "images/hyundai_creta.jpg";
+        }
+
+        if (model.contains("mt-15")
+                || model.contains("mt15")) {
+            return "images/yamaha_mt15.jpg";
+        }
+
+        if (model.contains("classic 350")) {
+            return "images/royal_enfield_classic_350.jpg";
+        }
+
+        if (model.contains("duke 250")) {
+            return "images/ktm_duke_250.jpg";
+        }
+
+        if (model.contains("activa")) {
+            return "images/honda_activa_6g.jpg";
+        }
+
+        if (model.contains("jupiter")) {
+            return "images/tvs_jupiter.jpg";
+        }
+
+        if (model.contains("ola s1")) {
+            return "images/ola_s1.jpg";
+        }
 
         if (vehicle.getVehicleType()
                 .equalsIgnoreCase("Car")) {
-            return carImageIcon;
+            return "images/car.png";
         }
 
         if (vehicle.getVehicleType()
                 .equalsIgnoreCase("Bike")) {
-            return bikeImageIcon;
+            return "images/bike.png";
         }
 
-        return scooterImageIcon;
+        return "images/scooter.png";
     }
 
-    private ImageIcon loadVehicleImage(
-            String imagePath) {
+    // =====================================================
+    // IMAGE LOADING
+    // =====================================================
+
+    private BufferedImage loadImage(
+            String path) {
 
         try {
 
-            Image image =
-                    ImageIO.read(
-                            new File(imagePath)
-                    );
+            File file =
+                    new File(path);
 
-            if (image == null) {
-                return new ImageIcon();
+            if (file.exists()) {
+                return ImageIO.read(file);
             }
 
-            Image scaledImage =
-                    image.getScaledInstance(
-                            230,
-                            120,
-                            Image.SCALE_SMOOTH
-                    );
+        } catch (IOException e) {
 
-            return new ImageIcon(
-                    scaledImage
+            System.out.println(
+                    "Could not load image: "
+                            + path
+            );
+        }
+
+        return null;
+    }
+
+    // =====================================================
+    // PRICE FORMATTING
+    // =====================================================
+
+    private String formatPrice(
+            double price) {
+
+        if (price == Math.rint(price)) {
+            return "₹" + (long) price;
+        }
+
+        return "₹" + price;
+    }
+
+    // =====================================================
+    // SMALL SPEC ICON
+    // =====================================================
+
+    private class SpecIcon implements javax.swing.Icon {
+
+        private final int type;
+
+        SpecIcon(int type) {
+            this.type = type;
+        }
+
+        @Override
+        public int getIconWidth() {
+            return 20;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return 20;
+        }
+
+        @Override
+        public void paintIcon(
+                java.awt.Component c,
+                Graphics g,
+                int x,
+                int y) {
+
+            Graphics2D g2 =
+                    (Graphics2D) g.create();
+
+            g2.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON
             );
 
-        } catch (Exception e) {
+            g2.setColor(RENTIT_NAVY);
 
-            return new ImageIcon();
+            g2.setStroke(
+                    new BasicStroke(
+                            1.5f
+                    )
+            );
+
+            int cx = x + 10;
+            int cy = y + 10;
+
+            if (type == 1) {
+
+                // Seat icon.
+                g2.drawOval(
+                        cx - 4,
+                        cy - 7,
+                        8,
+                        8
+                );
+
+                g2.drawArc(
+                        cx - 7,
+                        cy + 1,
+                        14,
+                        10,
+                        0,
+                        180
+                );
+
+            } else if (type == 2) {
+
+                // Fuel icon.
+                g2.drawRoundRect(
+                        cx - 5,
+                        cy - 7,
+                        8,
+                        14,
+                        2,
+                        2
+                );
+
+                g2.drawLine(
+                        cx + 3,
+                        cy - 5,
+                        cx + 7,
+                        cy - 2
+                );
+
+                g2.drawLine(
+                        cx + 7,
+                        cy - 2,
+                        cx + 7,
+                        cy + 4
+                );
+
+            } else {
+
+                // Gear icon.
+                g2.drawOval(
+                        cx - 5,
+                        cy - 5,
+                        10,
+                        10
+                );
+
+                g2.drawOval(
+                        cx - 2,
+                        cy - 2,
+                        4,
+                        4
+                );
+
+                g2.drawLine(
+                        cx,
+                        cy - 8,
+                        cx,
+                        cy - 5
+                );
+
+                g2.drawLine(
+                        cx,
+                        cy + 5,
+                        cx,
+                        cy + 8
+                );
+
+                g2.drawLine(
+                        cx - 8,
+                        cy,
+                        cx - 5,
+                        cy
+                );
+
+                g2.drawLine(
+                        cx + 5,
+                        cy,
+                        cx + 8,
+                        cy
+                );
+            }
+
+            g2.dispose();
         }
-    }
-
-    // =====================================================
-    // CATEGORY FILTER
-    // =====================================================
-
-    public void setSelectedCategory(String category) {
-
-        if (category == null || category.trim().isEmpty()) {
-            selectedCategory = "All";
-        } else {
-            selectedCategory = category;
-        }
-
-        buildVehiclePage();
-    }
-
-    // =====================================================
-    // REFRESH VEHICLES
-    // =====================================================
-
-    public void refreshVehicles() {
-        buildVehiclePage();
     }
 }

@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Window;
 import java.util.ArrayList;
 
@@ -16,7 +19,10 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JScrollBar;
 import javax.swing.JTextField;
+import javax.swing.JButton;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
@@ -184,7 +190,7 @@ public class BookingsPanel extends JPanel {
         // =================================================
 
         bookingsList =
-                new JPanel();
+                new PatternPanel();
 
         bookingsList.setLayout(
                 new BoxLayout(
@@ -194,6 +200,7 @@ public class BookingsPanel extends JPanel {
         );
 
         bookingsList.setBackground(Color.WHITE);
+        bookingsList.setOpaque(false);
 
         bookingsList.setBorder(
                 BorderFactory.createEmptyBorder(
@@ -261,7 +268,14 @@ public class BookingsPanel extends JPanel {
         scrollPane.setBackground(Color.WHITE);
 
         scrollPane.getViewport()
-                .setBackground(Color.WHITE);
+                .setBackground(new Color(245, 249, 255));
+
+        scrollPane.getVerticalScrollBar()
+                .setUnitIncrement(18);
+
+        styleScrollBar(
+                scrollPane.getVerticalScrollBar()
+        );
 
         add(
                 scrollPane,
@@ -1025,4 +1039,223 @@ public class BookingsPanel extends JPanel {
         bookingsList.revalidate();
         bookingsList.repaint();
     }
+
+    // =====================================================
+    // MODERN SCROLLBAR
+    // =====================================================
+
+    private void styleScrollBar(JScrollBar scrollBar) {
+
+        scrollBar.setPreferredSize(
+                new Dimension(
+                        12,
+                        Integer.MAX_VALUE
+                )
+        );
+
+        scrollBar.setOpaque(false);
+
+        scrollBar.setUI(
+                new BasicScrollBarUI() {
+
+                    @Override
+                    protected JButton createDecreaseButton(
+                            int orientation) {
+                        return createZeroButton();
+                    }
+
+                    @Override
+                    protected JButton createIncreaseButton(
+                            int orientation) {
+                        return createZeroButton();
+                    }
+
+                    @Override
+                    protected void paintTrack(
+                            Graphics g,
+                            javax.swing.JComponent c,
+                            java.awt.Rectangle trackBounds) {
+
+                        Graphics2D g2 =
+                                (Graphics2D) g.create();
+
+                        g2.setRenderingHint(
+                                RenderingHints.KEY_ANTIALIASING,
+                                RenderingHints.VALUE_ANTIALIAS_ON
+                        );
+
+                        g2.setColor(
+                                new Color(232, 239, 248)
+                        );
+
+                        int x =
+                                trackBounds.x + 4;
+
+                        int width = 4;
+
+                        g2.fillRoundRect(
+                                x,
+                                trackBounds.y,
+                                width,
+                                trackBounds.height,
+                                8,
+                                8
+                        );
+
+                        g2.dispose();
+                    }
+
+                    @Override
+                    protected void paintThumb(
+                            Graphics g,
+                            javax.swing.JComponent c,
+                            java.awt.Rectangle thumbBounds) {
+
+                        if (thumbBounds.isEmpty()
+                                || !scrollBar.isEnabled()) {
+                            return;
+                        }
+
+                        Graphics2D g2 =
+                                (Graphics2D) g.create();
+
+                        g2.setRenderingHint(
+                                RenderingHints.KEY_ANTIALIASING,
+                                RenderingHints.VALUE_ANTIALIAS_ON
+                        );
+
+                        g2.setColor(
+                                RENTIT_BLUE
+                        );
+
+                        int x =
+                                thumbBounds.x + 2;
+
+                        int width =
+                                Math.max(
+                                        7,
+                                        thumbBounds.width - 4
+                                );
+
+                        g2.fillRoundRect(
+                                x,
+                                thumbBounds.y,
+                                width,
+                                thumbBounds.height,
+                                10,
+                                10
+                        );
+
+                        g2.dispose();
+                    }
+
+                    private JButton createZeroButton() {
+
+                        JButton button =
+                                new JButton();
+
+                        button.setPreferredSize(
+                                new Dimension(
+                                        0,
+                                        0
+                                )
+                        );
+
+                        button.setMinimumSize(
+                                new Dimension(
+                                        0,
+                                        0
+                                )
+                        );
+
+                        button.setMaximumSize(
+                                new Dimension(
+                                        0,
+                                        0
+                                )
+                        );
+
+                        return button;
+                    }
+                }
+        );
+    }
+
+    // =====================================================
+    // SUBTLE BLUE BACKGROUND PATTERN
+    // =====================================================
+
+    private class PatternPanel extends JPanel {
+
+        PatternPanel() {
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+
+            Graphics2D g2 =
+                    (Graphics2D) g.create();
+
+            g2.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON
+            );
+
+            g2.setColor(
+                    new Color(247, 250, 255)
+            );
+
+            g2.fillRect(
+                    0,
+                    0,
+                    getWidth(),
+                    getHeight()
+            );
+
+            // Soft diagonal blue pattern.
+            g2.setColor(
+                    new Color(229, 239, 252)
+            );
+
+            for (int x = -getHeight();
+                 x < getWidth() + getHeight();
+                 x += 95) {
+
+                g2.drawLine(
+                        x,
+                        0,
+                        x + getHeight(),
+                        getHeight()
+                );
+            }
+
+            // Very subtle circular accents.
+            g2.setColor(
+                    new Color(235, 244, 255)
+            );
+
+            for (int x = 45;
+                 x < getWidth();
+                 x += 180) {
+
+                for (int y = 45;
+                     y < getHeight();
+                     y += 180) {
+
+                    g2.drawOval(
+                            x,
+                            y,
+                            55,
+                            55
+                    );
+                }
+            }
+
+            g2.dispose();
+
+            super.paintComponent(g);
+        }
+    }
+
 }

@@ -168,10 +168,9 @@ public class BookingManager {
 
                 if (vehicle != null) {
 
-                    // Restore vehicle availability only.
-                    // Do NOT deduct credits here.
-
-                    vehicle.bookVehicle();
+                    // Vehicle availability is restored globally by
+                    // RentalManager/VehicleAvailabilityStorage.
+                    // Do NOT change availability or credits here.
 
                     Booking booking =
                             new Booking(
@@ -199,11 +198,6 @@ public class BookingManager {
                     "Invalid booking data."
             );
 
-        } catch (VehicleNotAvailableException e) {
-
-            System.out.println(
-                    "A saved vehicle is no longer available."
-            );
-        }
     }
 }
+        }

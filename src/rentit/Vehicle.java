@@ -64,6 +64,7 @@ public abstract class Vehicle implements Rentable {
     public void bookVehicle() throws VehicleNotAvailableException {
         if (availableCount > 0) {
             availableCount--;
+            VehicleAvailabilityStorage.saveVehicle(this);
         } else {
             throw new VehicleNotAvailableException(
                     "Vehicle is not available for booking."
@@ -73,6 +74,13 @@ public abstract class Vehicle implements Rentable {
 
     public void cancelBooking() {
         availableCount++;
+        VehicleAvailabilityStorage.saveVehicle(this);
+    }
+
+    // Used only by VehicleAvailabilityStorage when restoring
+    // the shared availability state from disk.
+    void setAvailableCount(int availableCount) {
+        this.availableCount = Math.max(0, availableCount);
     }
 
     @Override

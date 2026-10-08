@@ -14,6 +14,14 @@ public class RentalManager {
         vehicles.add(vehicle);
     }
 
+    /**
+     * Loads the shared vehicle availability after all fleet
+     * vehicles have been added.
+     */
+    public void loadSavedAvailability() {
+        VehicleAvailabilityStorage.loadAll(vehicles);
+    }
+
     public void displayVehicles() {
 
         for (Vehicle vehicle : vehicles) {

@@ -55,7 +55,9 @@ public class RentITDialog {
                 createContentPanel();
 
         JLabel icon =
-                createIconLabel("!");
+                createIconLabel(
+                        getDialogType(title)
+                );
 
         JLabel messageLabel =
                 createMessageLabel(message);
@@ -132,7 +134,7 @@ public class RentITDialog {
                 createContentPanel();
 
         JLabel icon =
-                createIconLabel("?");
+                createIconLabel("confirm");
 
         JLabel messageLabel =
                 createMessageLabel(message);
@@ -271,7 +273,40 @@ public class RentITDialog {
     // =====================================================
 
     private static JLabel createIconLabel(
-            String symbol) {
+            String type) {
+
+        String symbol;
+        Color iconColor;
+        Color iconBackground;
+
+        if (type.equals("success")) {
+
+            symbol = "\u2713";
+            iconColor = new Color(34, 180, 100);
+            iconBackground = new Color(232, 248, 238);
+
+        } else if (type.equals("error")) {
+
+            symbol = "\u2715";
+            iconColor = new Color(220, 60, 70);
+            iconBackground = new Color(255, 237, 239);
+
+        } else if (type.equals("warning")
+                || type.equals("confirm")) {
+
+            symbol = type.equals("confirm")
+                    ? "?"
+                    : "\u26A0";
+
+            iconColor = new Color(245, 158, 11);
+            iconBackground = new Color(255, 248, 225);
+
+        } else {
+
+            symbol = "!";
+            iconColor = RENTIT_BLUE;
+            iconBackground = LIGHT_BLUE;
+        }
 
         JLabel icon =
                 new JLabel(
@@ -281,16 +316,14 @@ public class RentITDialog {
 
         icon.setFont(
                 new Font(
-                        "Arial",
+                        "Segoe UI Symbol",
                         Font.BOLD,
                         22
                 )
         );
 
-        icon.setForeground(RENTIT_BLUE);
-
-        icon.setBackground(LIGHT_BLUE);
-
+        icon.setForeground(iconColor);
+        icon.setBackground(iconBackground);
         icon.setOpaque(true);
 
         icon.setPreferredSize(
@@ -301,6 +334,41 @@ public class RentITDialog {
         );
 
         return icon;
+    }
+
+    private static String getDialogType(
+            String title) {
+
+        String text =
+                title == null
+                        ? ""
+                        : title.toLowerCase();
+
+        if (text.contains("confirmed")
+                || text.contains("success")
+                || text.contains("cancelled")
+                || text.contains("credits added")
+                || text.contains("completed")) {
+
+            return "success";
+
+        } else if (text.contains("failed")
+                || text.contains("error")
+                || text.contains("exception")
+                || text.contains("unavailable")
+                || text.contains("insufficient")) {
+
+            return "error";
+
+        } else if (text.contains("invalid")
+                || text.contains("required")
+                || text.contains("missing")
+                || text.contains("warning")) {
+
+            return "warning";
+        }
+
+        return "info";
     }
 
     // =====================================================

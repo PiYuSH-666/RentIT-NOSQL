@@ -10,7 +10,8 @@ import javax.swing.SwingUtilities;
 
 import rentit.AuthenticationManager;
 
-public class AuthenticationFrame extends JFrame {
+public class AuthenticationFrame
+        extends JFrame {
 
     private AuthenticationManager authenticationManager;
 
@@ -22,12 +23,14 @@ public class AuthenticationFrame extends JFrame {
         authenticationManager =
                 new AuthenticationManager();
 
-        setTitle("RentIT - Welcome");
+        setTitle(
+                "RentIT - Welcome"
+        );
 
         setSize(
                 new Dimension(
-                        1000,
-                        650
+                        1100,
+                        700
                 )
         );
 
@@ -48,7 +51,9 @@ public class AuthenticationFrame extends JFrame {
                 new CardLayout();
 
         contentPanel =
-                new JPanel(cardLayout);
+                new JPanel(
+                        cardLayout
+                );
 
         contentPanel.setBackground(
                 Color.WHITE
@@ -114,7 +119,8 @@ public class AuthenticationFrame extends JFrame {
         dispose();
     }
 
-    public static void main(String[] args) {
+    public static void main(
+            String[] args) {
 
         SwingUtilities.invokeLater(
                 () -> {

@@ -15,116 +15,77 @@ public class AuthenticationManager {
     }
 
     public boolean signUp(String name, String username, String password) {
-
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.trim().isEmpty()
+                || username == null || username.trim().isEmpty()
+                || password == null || password.trim().isEmpty()) {
             return false;
         }
 
-        if (username == null || username.trim().isEmpty()) {
+        String cleanUsername = username.trim();
+        String hashedPassword = PasswordUtil.hashPassword(password);
+        Customer customer = new Customer(name.trim(), cleanUsername,
+                hashedPassword, 5000);
+
+        if (!CustomerStorage.addCustomer(customer)) {
             return false;
         }
 
-        if (password == null || password.trim().isEmpty()) {
+        customers = CustomerStorage.loadCustomers();
+        currentCustomer = findCustomer(cleanUsername);
+        if (currentCustomer == null) {
             return false;
         }
-
-        if (findCustomer(username) != null) {
-            return false;
-        }
-
-        String hashedPassword =
-                PasswordUtil.hashPassword(password);
-
-        Customer customer =
-                new Customer(
-                        name.trim(),
-                        username.trim(),
-                        hashedPassword,
-                        5000
-                );
-
-        customers.add(customer);
-        CustomerStorage.saveCustomers(customers);
-
-        currentCustomer = customer;
-        currentWallet =
-                new CreditWallet(customer.getCredits());
-
+        currentWallet = new CreditWallet(currentCustomer.getCredits(),
+                currentCustomer.getUsername());
         return true;
     }
 
     public boolean login(String username, String password) {
+        if (username == null || password == null) {
+            return false;
+        }
 
+        // Reload from disk each login so this process does not use an old balance.
+        customers = CustomerStorage.loadCustomers();
         Customer customer = findCustomer(username);
-
-        if (customer != null && password != null) {
-
-            String enteredPasswordHash =
-                    PasswordUtil.hashPassword(password);
-
-            if (customer.getPassword()
-                    .equals(enteredPasswordHash)) {
-
+        if (customer != null) {
+            String enteredPasswordHash = PasswordUtil.hashPassword(password);
+            if (customer.getPassword().equals(enteredPasswordHash)) {
                 currentCustomer = customer;
-                currentWallet =
-                        new CreditWallet(customer.getCredits());
-
+                currentWallet = new CreditWallet(customer.getCredits(),
+                        customer.getUsername());
                 return true;
             }
         }
-
         return false;
     }
 
+    /** Wallet changes are saved immediately; this syncs only the in-memory object. */
     public void saveCurrentCustomer() {
-
-        if (currentCustomer == null
-                || currentWallet == null) {
-            return;
+        if (currentCustomer != null && currentWallet != null) {
+            currentCustomer.setCredits(currentWallet.getCredits());
         }
-
-        currentCustomer.setCredits(
-                currentWallet.getCredits()
-        );
-
-        CustomerStorage.saveCustomers(customers);
     }
 
     public void logout() {
-
         saveCurrentCustomer();
-
         currentCustomer = null;
         currentWallet = null;
     }
 
-    public Customer getCurrentCustomer() {
-        return currentCustomer;
-    }
-
-    public CreditWallet getCurrentWallet() {
-        return currentWallet;
-    }
-
-    public boolean isLoggedIn() {
-        return currentCustomer != null;
-    }
+    public Customer getCurrentCustomer() { return currentCustomer; }
+    public CreditWallet getCurrentWallet() { return currentWallet; }
+    public boolean isLoggedIn() { return currentCustomer != null; }
 
     private Customer findCustomer(String username) {
-
         if (username == null) {
             return null;
         }
-
         for (Customer customer : customers) {
-
-            if (customer.getUsername()
-                    .equalsIgnoreCase(username)) {
-
+            if (customer.getUsername().equalsIgnoreCase(username.trim())) {
                 return customer;
             }
         }
-
         return null;
     }
 }

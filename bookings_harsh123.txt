@@ -1,1 +1,2 @@
-sas|BIKE003|KTM Duke 250|1|as|as|1200.0
+sa|CAR003|Hyundai Creta|1|sa|sa|2500.0|82a84310-eb3c-3e55-9834-cdbd8eeff2dc|CANCELLED
+d|CAR003|Hyundai Creta|1|ds|ds|2500.0|0576e0f4-81d2-4afe-bfb7-fba029601ecd|CANCELLED

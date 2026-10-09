@@ -915,26 +915,30 @@ public class BookingsPanel extends JPanel {
 
             if (confirmed) {
 
-                booking.cancelBooking();
+                if (bookingManager.cancelBooking(booking)) {
 
-                bookingManager.removeBooking(
-                        booking
-                );
+                    bookingManager.removeBooking(booking);
+                    bookingManager.saveBookings();
+                    refreshBookings();
+                    vehiclesPanel.refreshVehicles();
 
-                bookingManager.saveBookings();
+                    RentITDialog.showMessage(
+                            this,
+                            "Booking Cancelled",
+                            "Booking cancelled successfully.\n"
+                                    + "₹" + booking.getTotalPrice()
+                                    + " has been refunded.",
+                            "OK"
+                    );
 
-                refreshBookings();
-
-                vehiclesPanel.refreshVehicles();
-
-                RentITDialog.showMessage(
-                        this,
-                        "Booking Cancelled",
-                        "Booking cancelled successfully.\n"
-                                + "₹" + booking.getTotalPrice()
-                                + " has been refunded.",
-                        "OK"
-                );
+                } else {
+                    RentITDialog.showMessage(
+                            this,
+                            "Cancellation Not Completed",
+                            "The booking could not be cancelled. Please try again.",
+                            "OK"
+                    );
+                }
             }
         });
 
@@ -983,6 +987,10 @@ public class BookingsPanel extends JPanel {
     // =====================================================
 
     public void refreshBookings() {
+
+        // Pick up bookings and wallet changes made by another RentIT instance.
+        bookingManager.refreshFromStorage();
+        wallet.refreshSavedCredits();
 
         creditsLabel.setText(
                 "Available Credits: ₹"

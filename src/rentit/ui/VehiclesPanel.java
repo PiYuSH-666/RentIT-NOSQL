@@ -681,6 +681,10 @@ public class VehiclesPanel extends JPanel {
             return;
         }
 
+        // Another RentIT instance may have booked or cancelled a vehicle.
+        // Reload the shared file before rendering the current in-memory fleet.
+        rentalManager.loadSavedAvailability();
+
         cardsPanel.removeAll();
 
         String searchText = "";
@@ -1693,6 +1697,11 @@ public class VehiclesPanel extends JPanel {
 
     private void showVehicleDetails(Vehicle vehicle) {
 
+        // Details may have been opened after another app instance changed availability.
+        if (rentalManager != null) {
+            rentalManager.loadSavedAvailability();
+        }
+
         JDialog dialog =
                 new JDialog(
                         SwingUtilities.getWindowAncestor(this),
@@ -2633,6 +2642,10 @@ public class VehiclesPanel extends JPanel {
                             VehicleNotAvailableException
                             | InsufficientCreditsException
                             | InvalidBookingException ex) {
+
+                        // The failed attempt may mean another instance just booked
+                        // the last available vehicle. Refresh the page immediately.
+                        refreshVehicles();
 
                     	RentITDialog.showMessage(
                     	        this,

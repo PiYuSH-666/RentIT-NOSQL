@@ -1,2 +1,0 @@
-s|BIKE003|KTM Duke 250|1|sa|sa|1200.0|789b6e2c-bb6f-48f2-b53a-dff872831ba5|CANCELLED
-sa|BIKE002|Royal Enfield Classic 350|1|as|as|1000.0|1437c6eb-6e23-48b7-bb0a-d9604786591b|CANCELLED

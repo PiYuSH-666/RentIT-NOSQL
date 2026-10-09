@@ -18,6 +18,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -73,6 +75,12 @@ public class VehiclesPanel extends JPanel {
     private JPanel cardsPanel;
     private JTextField searchField;
     private String selectedCategory = "All";
+
+    // Cache loaded and resized vehicle images so search/filter refreshes
+    // do not read the same JPG files from disk repeatedly.
+    private final Map<String, BufferedImage> imageCache = new HashMap<>();
+    private final Map<String, javax.swing.ImageIcon> scaledImageCache =
+            new HashMap<>();
 
     private JButton allButton;
     private JButton carsButton;
@@ -1027,11 +1035,14 @@ public class VehiclesPanel extends JPanel {
                                     RenderingHints.VALUE_ANTIALIAS_ON
                             );
 
+                            // Soft patterned background behind the vehicle image.
+                            // This keeps the vehicle JPG unchanged while giving each
+                            // card the same polished RentIT visual style.
                             g2.setColor(
                                     new Color(
-                                            247,
-                                            250,
-                                            254
+                                            244,
+                                            249,
+                                            255
                                     )
                             );
 
@@ -1044,6 +1055,164 @@ public class VehiclesPanel extends JPanel {
                                     18
                             );
 
+                            // Clip the decorative pattern to the rounded image area.
+                            java.awt.Shape oldClip = g2.getClip();
+                            g2.setClip(
+                                    new java.awt.geom.RoundRectangle2D.Double(
+                                            0,
+                                            0,
+                                            getWidth(),
+                                            getHeight(),
+                                            18,
+                                            18
+                                    )
+                            );
+
+                            // Very light diagonal strokes.
+                            g2.setColor(
+                                    new Color(
+                                            218,
+                                            234,
+                                            255,
+                                            125
+                                    )
+                            );
+                            g2.setStroke(
+                                    new BasicStroke(
+                                            2f,
+                                            BasicStroke.CAP_ROUND,
+                                            BasicStroke.JOIN_ROUND
+                                    )
+                            );
+
+                            for (int x = -120; x < getWidth() + 160; x += 42) {
+                                g2.drawLine(
+                                        x,
+                                        getHeight(),
+                                        x + 95,
+                                        0
+                                );
+                            }
+
+                            // Soft circular shapes.
+                            g2.setColor(
+                                    new Color(
+                                            205,
+                                            226,
+                                            251,
+                                            105
+                                    )
+                            );
+
+                            g2.fillOval(
+                                    -32,
+                                    54,
+                                    78,
+                                    78
+                            );
+
+                            g2.fillOval(
+                                    getWidth() - 72,
+                                    -28,
+                                    92,
+                                    92
+                            );
+
+                            g2.fillOval(
+                                    getWidth() - 54,
+                                    82,
+                                    64,
+                                    64
+                            );
+
+                            g2.fillOval(
+                                    118,
+                                    -42,
+                                    70,
+                                    70
+                            );
+
+                            // Small dotted clusters.
+                            g2.setColor(
+                                    new Color(
+                                            175,
+                                            211,
+                                            247,
+                                            115
+                                    )
+                            );
+
+                            for (int row = 0; row < 5; row++) {
+                                for (int col = 0; col < 5; col++) {
+                                    int dx = 18 + (col * 8);
+                                    int dy = 14 + (row * 8);
+
+                                    if ((row + col) % 2 == 0) {
+                                        g2.fillOval(
+                                                dx,
+                                                dy,
+                                                3,
+                                                3
+                                        );
+                                    }
+                                }
+                            }
+
+                            for (int row = 0; row < 5; row++) {
+                                for (int col = 0; col < 5; col++) {
+                                    int dx =
+                                            getWidth()
+                                            - 58
+                                            + (col * 8);
+                                    int dy =
+                                            54
+                                            + (row * 8);
+
+                                    if ((row + col) % 2 == 0) {
+                                        g2.fillOval(
+                                                dx,
+                                                dy,
+                                                3,
+                                                3
+                                        );
+                                    }
+                                }
+                            }
+
+                            // A few larger abstract rounded strokes.
+                            g2.setColor(
+                                    new Color(
+                                            191,
+                                            218,
+                                            249,
+                                            95
+                                    )
+                            );
+
+                            g2.setStroke(
+                                    new BasicStroke(
+                                            7f,
+                                            BasicStroke.CAP_ROUND,
+                                            BasicStroke.JOIN_ROUND
+                                    )
+                            );
+
+                            g2.drawLine(
+                                    42,
+                                    18,
+                                    78,
+                                    4
+                            );
+
+                            g2.drawLine(
+                                    getWidth() - 88,
+                                    getHeight() - 18,
+                                    getWidth() - 42,
+                                    getHeight() - 36
+                            );
+
+                            g2.setClip(oldClip);
+
                             g2.dispose();
 
                             super.paintComponent(g);
@@ -1055,16 +1224,15 @@ public class VehiclesPanel extends JPanel {
             imageArea.setPreferredSize(
                     new Dimension(
                             330,
-                            160
+                            130
                     )
             );
 
+            String imagePath =
+                    getVehicleImagePath(vehicle);
+
             BufferedImage image =
-                    loadImage(
-                            getVehicleImagePath(
-                                    vehicle
-                            )
-                    );
+                    loadImage(imagePath);
 
             JLabel imageLabel =
                     new JLabel();
@@ -1079,8 +1247,8 @@ public class VehiclesPanel extends JPanel {
 
             if (image != null) {
 
-                int maxWidth = 275;
-                int maxHeight = 140;
+                int maxWidth = 240;
+                int maxHeight = 110;
 
                 double ratio =
                         (double) image.getWidth()
@@ -1096,18 +1264,30 @@ public class VehiclesPanel extends JPanel {
                             (int) (height * ratio);
                 }
 
-                java.awt.Image scaled =
-                        image.getScaledInstance(
-                                width,
-                                height,
-                                java.awt.Image.SCALE_SMOOTH
-                        );
+                String cacheKey =
+                        imagePath + "|" + width + "x" + height;
 
-                imageLabel.setIcon(
-                        new javax.swing.ImageIcon(
-                                scaled
-                        )
-                );
+                javax.swing.ImageIcon cachedIcon =
+                        scaledImageCache.get(cacheKey);
+
+                if (cachedIcon == null) {
+                    java.awt.Image scaled =
+                            image.getScaledInstance(
+                                    width,
+                                    height,
+                                    java.awt.Image.SCALE_SMOOTH
+                            );
+
+                    cachedIcon =
+                            new javax.swing.ImageIcon(scaled);
+
+                    scaledImageCache.put(
+                            cacheKey,
+                            cachedIcon
+                    );
+                }
+
+                imageLabel.setIcon(cachedIcon);
 
             } else {
 
@@ -2628,13 +2808,25 @@ public class VehiclesPanel extends JPanel {
     private BufferedImage loadImage(
             String path) {
 
+        if (path == null) {
+            return null;
+        }
+
+        if (imageCache.containsKey(path)) {
+            return imageCache.get(path);
+        }
+
         try {
 
             File file =
                     new File(path);
 
             if (file.exists()) {
-                return ImageIO.read(file);
+                BufferedImage image =
+                        ImageIO.read(file);
+
+                imageCache.put(path, image);
+                return image;
             }
 
         } catch (IOException e) {
@@ -2645,6 +2837,9 @@ public class VehiclesPanel extends JPanel {
             );
         }
 
+        // Remember missing images too, so a missing file is not checked
+        // from disk again every time the cards are refreshed.
+        imageCache.put(path, null);
         return null;
     }
 
